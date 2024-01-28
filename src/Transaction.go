@@ -3,7 +3,7 @@ package main
 import (
     "crypto/sha256"
     "encoding/hex"
-    "fmt",
+    "fmt"
 	"Wallet"
 )
 
@@ -23,9 +23,10 @@ type Transaction struct {
     Nonce            int
     TransactionID    string
     Signature        []byte
+    TransactionType  string
 }
 
-func NewTransaction(sender, receiver string, tType TransactionType, amount float64, message string, nonce int) *Transaction {
+func create_transaction(sender, receiver string, tType TransactionType, amount float64, message string, nonce int) *Transaction {
     transaction := &Transaction{
         SenderAddress:   sender,
         ReceiverAddress: receiver,
@@ -52,13 +53,28 @@ func (t *Transaction) String() string {
 
 func validate_transaction(transaction *Transaction, blockchain *Blockchain) bool {
     // Verify the transaction's signature
-    if !Wallet.VerifyTransaction(transaction, []byte(transaction.SenderAddress), transaction.Signature) {
+    if !Wallet.verify_signature(transaction, []byte(transaction.SenderAddress), transaction.Signature) {
         return false
     }
+    
+    // Check if the sender has enough balance for coin transfers
+    if transaction.Type == CoinTransfer {
+        senderBalance := blockchain.GetBalance(transaction.SenderAddress)
+        if senderBalance < transaction.Amount {
+            return false
+        }
+    }
+    else if transaction.Type == MessageTransfer {
+        senderBalance := blockchain.GetBalance(transaction.SenderAddress)
+        messageSize := len(transaction.Message)
+        if senderBalance < messageSize {
+            return false
+        }
+    }
+        // TODO: Add staking check
+    
 
     // Additional validation logic depending on your blockchain's rules:
-    // For example, checking if the sender has enough balance for coin transfers
-
     // Check for valid nonce, etc.
 
     return true

@@ -3,6 +3,7 @@ package main
 import (
     "crypto/sha256"
     "math/rand"
+    
 )
 
 type Blockchain struct {
@@ -30,6 +31,10 @@ func (bc *Blockchain) selectValidator() string {
     return "" // Fallback, should not usually happen
 }
 
+func (w *Wallet) GetBalance(address string) int {
+    return w.Balance
+    
+}
 // Example of how to seed the random number generator
 func seedRandWithPreviousBlockHash(prevBlockHash string) {
     hashBytes := sha256.Sum256([]byte(prevBlockHash))

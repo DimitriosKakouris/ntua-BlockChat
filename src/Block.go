@@ -5,17 +5,20 @@ import (
 	"encoding/hex"
 	"fmt"
 	"time"
-	"Transaction"
+	
 )
 
 // Block represents a block in the blockchain
+const capacity = 100
+
 type Block struct {
 	index        int
 	timestamp    time.Time
-	transactions []Transaction.transaction
+	transactions []Transaction
 	validator     string
 	previous_hash string
 	current_hash  string
+	blockcapacity int
 }
 
 // CalculateHash calculates the hash for a block
@@ -33,9 +36,10 @@ func NewBlock(index int, transactions []string, previous_hash string) *Block {
 	block := &Block{
 		index:        		index,
 		timestamp:    		time.Now(),
-		transactions: 		transactions,
+		transactions: 	    transactions,
 		previous_hash:     	previous_hash,
 		current_hash:       "",
+		blockcapacity:		0,
 	}
 	block.CalculateHash()
 	return block
@@ -48,7 +52,7 @@ func main() {
 		genesisBlock.index, genesisBlock.timestamp.String(), genesisBlock.transactions, genesisBlock.previous_hash, genesisBlock.current_hash)
 
 	// Creating a new block
-	newtransactions := []Transaction.transaction{}
+	newtransactions := Transaction{}
 	newBlock := NewBlock(1, newtransactions, genesisBlock.current_hash)
 	fmt.Printf("\nNew Block:\nindex: %d\ntimestamp: %s\ntransactions: %v\nprevious_hash: %s\ncurrent_hash: %s\n",
 		newBlock.index, newBlock.timestamp.String(), newBlock.transactions, newBlock.previous_hash, newBlock.current_hash)
