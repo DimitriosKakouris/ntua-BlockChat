@@ -4,7 +4,6 @@ import (
     "crypto/sha256"
     "encoding/hex"
     "fmt"
-	"Wallet"
 )
 
 type TransactionType int
@@ -63,8 +62,7 @@ func validate_transaction(transaction *Transaction, blockchain *Blockchain) bool
         if senderBalance < transaction.Amount {
             return false
         }
-    }
-    else if transaction.Type == MessageTransfer {
+    } else if transaction.Type == MessageTransfer {
         senderBalance := blockchain.GetBalance(transaction.SenderAddress)
         messageSize := len(transaction.Message)
         if senderBalance < messageSize {

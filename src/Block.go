@@ -5,16 +5,15 @@ import (
 	"encoding/hex"
 	"fmt"
 	"time"
-	
 )
 
 // Block represents a block in the blockchain
 const capacity = 100
 
 type Block struct {
-	index        int
-	timestamp    time.Time
-	transactions []Transaction
+	index         int
+	timestamp     time.Time
+	transactions  *Transaction
 	validator     string
 	previous_hash string
 	current_hash  string
@@ -32,27 +31,29 @@ func (b *Block) CalculateHash() {
 }
 
 // NewBlock creates a new block with the given data
-func NewBlock(index int, transactions []string, previous_hash string) *Block {
+func NewBlock(index int, transactions *Transaction, previous_hash string) *Block {
 	block := &Block{
-		index:        		index,
-		timestamp:    		time.Now(),
-		transactions: 	    transactions,
-		previous_hash:     	previous_hash,
-		current_hash:       "",
-		blockcapacity:		0,
+		index:         index,
+		timestamp:     time.Now(),
+		transactions:  transactions,
+		previous_hash: previous_hash,
+		current_hash:  "",
+		blockcapacity: 0,
 	}
 	block.CalculateHash()
 	return block
 }
 
 func main() {
-	// Creating a genesis block 
-	genesisBlock := NewBlock(0, []string{"Genesis Transaction"}, "")
+	// Creating a genesis block
+	genesisTransactions := create_transaction("0", "0", CoinTransfer, 0, "Genesis Transaction", 0)
+    genesisBlock := NewBlock(0, genesisTransactions, "1")
+	
 	fmt.Printf("Genesis Block:\nindex: %d\ntimestamp: %s\ntransactions: %v\nprevious_hash: %s\ncurrent_hash: %s\n",
 		genesisBlock.index, genesisBlock.timestamp.String(), genesisBlock.transactions, genesisBlock.previous_hash, genesisBlock.current_hash)
 
 	// Creating a new block
-	newtransactions := Transaction{}
+	newtransactions := &Transaction{}
 	newBlock := NewBlock(1, newtransactions, genesisBlock.current_hash)
 	fmt.Printf("\nNew Block:\nindex: %d\ntimestamp: %s\ntransactions: %v\nprevious_hash: %s\ncurrent_hash: %s\n",
 		newBlock.index, newBlock.timestamp.String(), newBlock.transactions, newBlock.previous_hash, newBlock.current_hash)

@@ -1,9 +1,9 @@
 package main
 
 import (
-    "crypto/sha256"
-    "math/rand"
-    
+	"crypto/sha256"
+	"encoding/binary"
+	"math/rand"
 )
 
 type Blockchain struct {
