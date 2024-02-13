@@ -11,7 +11,7 @@ class Block:
         self.timestamp = time.time()
         self.transactions = []
         self.current_hash = self.hash_block()
-        self.validator = validate_block()
+        self.validator = None
 
 
     def genesis(self, n):
@@ -34,4 +34,5 @@ class Block:
         }
         block_json = json.dumps(block_json, sort_keys=True)
         return SHA256.new(block_json.encode()).hexdigest()
+    
     
