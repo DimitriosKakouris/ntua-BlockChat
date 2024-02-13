@@ -5,6 +5,7 @@
 # To-Do List
 
 - [ ] Websockets/endpoints
+
 Implement the following functions:
 - [ ] generate_wallet()
 - [ ] create_transaction()
