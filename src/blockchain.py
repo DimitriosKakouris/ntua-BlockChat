@@ -1,6 +1,7 @@
 from block import Block
 import random
 from datetime import datetime
+import time
 
 class Blockchain:
     def __init__(self):
@@ -17,6 +18,7 @@ class Blockchain:
             random.seed(seed)
             validator = self.select_validator()
 
+            start_time = time.time()
             # Assuming 'select_validator' randomly selects based on stake
             if validator.id == node.id:  # Assuming you have a way to identify the current node
                 previous_hash = self.chain.blocks[-1].current_hash if self.chain else '1'
@@ -26,9 +28,13 @@ class Blockchain:
                     validator_address=validator
                 )
                 self.add_block(new_block)
-                return True
+                # Calculate minting time
+                minting_time = time.time() - start_time
+                return minting_time
             else:
-                return False
+                return 0
+        else:
+            return 0
 
     def select_validator(nodes):
         """

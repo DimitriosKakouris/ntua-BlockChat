@@ -1,7 +1,7 @@
 import asyncio
 import pickle
 import websockets
-from node import Node, MINING_DIFFICULTY
+from node import Node
 
 node = Node()
 n = 0

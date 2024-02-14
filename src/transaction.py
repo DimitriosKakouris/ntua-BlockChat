@@ -44,7 +44,7 @@ class Transaction:
         """
         transaction_details = {
             'sender_address': self.sender_address,
-            'recipient_address': self.recipient_address,
+            'recipient_address': self.receiver_address,
             'type_of_transaction': self.type_of_transaction,
             'amount': self.amount,
             'nonce': self.nonce,
@@ -62,11 +62,11 @@ class Transaction:
         if not self.verify_signature():
             return False
         if self.type_of_transaction == 'coin':
-            senderBalance = wallet.get_balance(self.sender_address)
+            senderBalance = wallet.get_balance()
             if senderBalance < self.amount:
                 return False
         else:
-            senderBalance = wallet.get_balance(self.sender_address)
+            senderBalance = wallet.get_balance()
             message_size = len(self.message)
             if senderBalance < message_size:
                 return False
