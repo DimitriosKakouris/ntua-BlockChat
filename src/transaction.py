@@ -5,9 +5,9 @@ import base64
 import json
 
 class Transaction:
-    def __init__(self, sender_address, recipient_address, type_of_transaction, amount, nonce, message=None):
+    def __init__(self, sender_address, receiver_address, type_of_transaction, amount, nonce, message=None):
         self.sender_address = sender_address
-        self.recipient_address = recipient_address
+        self.receiver_address = receiver_address
         if type_of_transaction not in ['coin', 'message']:
             raise ValueError("Value can only be 'coin' or 'message'")
         self.type_of_transaction = type_of_transaction
@@ -53,6 +53,7 @@ class Transaction:
         transaction_string = json.dumps(transaction_details, sort_keys=True)
         h = SHA256.new(transaction_string.encode())
         return h.hexdigest()
+    
     
     def validate_transaction(self, wallet):
         """
