@@ -8,8 +8,8 @@
 
 Implement the following functions:
 - [ ] generate_wallet()
-- [ ] create_transaction()
-- [ ] broadcast_transaction()
-- [ ] broadcast_block()
+- [x] create_transaction()
+- [x] broadcast_transaction()
+- [x] broadcast_block()
 - [ ] validate_chain()
-- [ ] stake(amount)
+- [x] stake(amount)
