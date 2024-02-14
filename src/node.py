@@ -46,6 +46,17 @@ class Node:
     def validate_block(self, block):
         return (block.previous_hash == self.chain.blocks[-1].current_hash) and (block.current_hash == block.hash_block())
     
+    def validate_chain(self, blocks):
+        """Validates all the blocks of a chain"""
+
+        if (blocks[0].previous_hash != 1) or (blocks[0].hash != blocks[0].hash_block()):
+            return False
+
+        for i in range(1, len(blocks)):
+            if not (blocks[i].hash == blocks[i].hash_block()) or not (blocks[i].previous_hash == blocks[i - 1].hash):
+                return False
+        return True
+    
     def register_node_to_ring(self, id, ip, port, public_key, balance):
         self.ring.append({
             "id": id,

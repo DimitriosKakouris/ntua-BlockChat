@@ -11,3 +11,6 @@ class Wallet:
         
     def get_balance(self):
         return self.balance
+
+def generate_wallet():
+    return Wallet()
