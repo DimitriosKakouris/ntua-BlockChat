@@ -4,7 +4,7 @@ import websockets
 from node import Node
 
 node = Node()
-n = 0
+num_nodes = 0 #TODO: define it in main.py
 
 # WebSocket server implementation
 async def handler(websocket, path):
@@ -21,7 +21,7 @@ async def handler(websocket, path):
             
             node.register_node_to_ring(id=node_id, ip=node_ip, port=node_port, public_key=node_key, balance=0)
             
-            if node_id == n - 1:
+            if node_id == num_nodes - 1:
                 for ring_node in node.ring:
                     if ring_node["id"] != node.id:
                         await share_chain(ring_node)

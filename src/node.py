@@ -10,7 +10,7 @@ import json
 from threading import Lock
 from collections import deque
 
-n = 5 #TODO: define it in main.py
+num_nodes = 5 #TODO: define it in main.py
 
 class Node:
     def __init__(self, id):
@@ -43,7 +43,7 @@ class Node:
         
         if len(self.chain.blocks) == 0:
             # Genesis block
-            self.current_block = genesis(n)
+            self.current_block = genesis(self.wallet.public_key, num_nodes)
         else:
             # Filled out later
             self.current_block = Block(None, None)
