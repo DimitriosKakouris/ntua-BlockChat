@@ -1,7 +1,7 @@
 from blockchain import Blockchain
 from transaction import Transaction
 from wallet import Wallet
-from block import Block
+from block import Block, genesis
 
 import websockets
 import asyncio
@@ -9,6 +9,8 @@ import pickle
 import json
 from threading import Lock
 from collections import deque
+
+n = 5 #TODO: define it in main.py
 
 class Node:
     def __init__(self, id):
@@ -27,18 +29,26 @@ class Node:
         Updates the node's stake amount for the Proof of Stake process.
         The node can increase or decrease its stake, within the limits of its available balance.
         """
-        if amount < 0:
-            raise ValueError("Stake amount cannot be negative.")
+        stake_trasaction = self.create_transaction('0', "coin", amount)
 
-        available_balance = self.wallet.balance - self.stake_amount  # Assuming wallet has a balance attribute
+        if not stake_trasaction["success"]:
+            return False
+        
+        else:
+            self.stake = amount
+            return True
+        
+    def create_new_block(self):
+        """Creates a new block"""
+        
+        if len(self.chain.blocks) == 0:
+            # Genesis block
+            self.current_block = genesis(n)
+        else:
+            # Filled out later
+            self.current_block = Block(None, None)
+        return self.current_block
 
-        if amount > available_balance:
-            raise ValueError(f"Insufficient balance to stake {amount}. Available for staking: {available_balance}")
-
-        # Update the stake amount and adjust the wallet balance accordingly
-        self.stake_amount = amount
-        # print(f"Stake amount updated to {self.stake_amount}.")
-        # return True
 
     def add_block(self, block):
         self.chain.add_block(block)
@@ -70,9 +80,8 @@ class Node:
         """Creates a new transaction, directly adjusting account balances."""
 
         # Check if the account has enough balance:
-        # perhaps this should be implemented in the websockets.py file
-        # if self.wallet.balance < amount:
-        #     return {"mining_time": 0, "success": False}
+        if self.wallet.balance < amount:
+            return {"minting_time": 0, "success": False}
 
         # Create the transaction
         transaction = Transaction(
@@ -103,8 +112,8 @@ class Node:
         # In a real application, the receiver's balance would be updated when the transaction is confirmed,
         # not here. This line is for illustration only.
         # receiver_account.balance += amount
-
-        return {"mining_time": minting_time, "success": True}
+        self.wallet.nonce += 1
+        return {"minting_time": minting_time, "success": True}
     
 
     async def send_transaction(self, node, transaction):
@@ -171,7 +180,7 @@ class Node:
 
     
     def add_transaction_to_block(self, transaction):
-        """Adds a transaction to a block, check if mining is needed and update
+        """Adds a transaction to a block, check if minting is needed and update
         the wallet and balances of participating nodes"""
 
         # Add transaction to the wallet of the sender and the receiver
@@ -189,7 +198,7 @@ class Node:
 
         # If chain has only the genesis block, create new block
         if self.current_block is None:
-            self.current_block = Block(None, None) #may need to check if genesis block is handled correctly
+            self.current_block = self.create_new_block()
 
         self.block_lock.acquire()
         if self.current_block.add_transaction(transaction, self.capacity):
