@@ -5,8 +5,8 @@ import time
 
 class Blockchain:
     def __init__(self):
-        block = Block()
-        self.blocks = [block.genesis()]
+        #block = Block()
+        self.blocks = [] #block.genesis()
 
     def add_block(self, block):
         self.blocks.append(block)
@@ -14,14 +14,22 @@ class Blockchain:
     def mint_block(self, node, capacity):
         if len(self.current_transactions) >= capacity: 
             # Implementing the proof of stake
-            seed = sum(ord(c) for c in str(datetime.now()))  # Simple seed based on current time
+
+            # Use the hash of the previous block as the seed for the pseudorandom number generator
+            if self.blocks:  # Ensure there is at least one block in the chain
+                previous_block = self.blocks[-1]
+                # Assuming each block has a 'current_hash' attribute
+                seed = int(previous_block.current_hash, 16)  # Convert hex hash to an integer
+            else:
+                # Fallback seed for the very first block (genesis block)
+                seed = 1
             random.seed(seed)
-            validator = self.select_validator()
+            validator = self.select_validator(node.ring)
 
             start_time = time.time()
-            # Assuming 'select_validator' randomly selects based on stake
+            
             if validator.id == node.id:  # Assuming you have a way to identify the current node
-                previous_hash = self.chain.blocks[-1].current_hash if self.chain else '1'
+                previous_hash = self.blocks[-1].current_hash if self.blocks else '1'
                 new_block = Block(
                     transactions=node.unconfirmed_transactions,
                     previous_hash=previous_hash,
