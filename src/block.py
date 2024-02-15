@@ -13,12 +13,6 @@ class Block:
         self.validator = None
 
 
-    def genesis(self, n):
-        genesis_block = Block(0, 1)
-        genesis_transaction = Transaction('0', self.wallet.public_key, 'coin', 1000*n, 0) #TODO: may want to change the sender and receiver address
-        genesis_block.transactions.append(genesis_transaction)
-        return genesis_block
-
     def add_transaction(self, transaction, capacity):
         self.transactions.append(transaction)
         if len(self.transactions) >= capacity:
@@ -35,4 +29,8 @@ class Block:
         block_json = json.dumps(block_json, sort_keys=True)
         return SHA256.new(block_json.encode()).hexdigest()
     
-    
+def genesis(self, n):
+    genesis_block = Block(0, 1)
+    genesis_transaction = Transaction('0', self.wallet.public_key, 'coin', 1000*n, 0) #TODO: may want to change the sender and receiver address
+    genesis_block.transactions.append(genesis_transaction)
+    return genesis_block
