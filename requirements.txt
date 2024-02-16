@@ -1,3 +1,4 @@
-python==3.10.11
 pycryptodome
 websockets
+inquirer
+texttable
