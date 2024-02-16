@@ -28,7 +28,9 @@ Implement the following functions:
 ```  docker build -t ntua-distributed-systems . ```
 
 2. Run each docker container with this command:
+
 ```docker run -e PORT=8000 -e IP=127.0.0.1 -p 8000:8000 --rm ntua-distributed-systems```
+
 3. Check status of docker containers:
 
 ``` docker-compose ps ``` 
