@@ -1,7 +1,7 @@
 # ntua-blockchain 2023-24
 
 <p align="center">
-  <img src="./images/logo.png" />
+  <img src="./images/logo.png" max-width="50%" />
 </p>
 
 #### BlockChat
