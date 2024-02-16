@@ -7,10 +7,10 @@
 #### BlockChat
 
 # To-Do List
-
-- [ ] Websockets/endpoints
-- [ ] app.py/main.py file
-- [ ] client/blockchat.py file
+- [ ] Run the code and debug
+- [X] Websockets/endpoints
+- [X] app.py/main.py file
+- [X] client/blockchat.py file
 
 Implement the following functions:
 - [x] generate_wallet()
@@ -25,9 +25,11 @@ Implement the following functions:
 
 1. From home directory (where docker-compose.yml and Dockerfile reside) run:
 
-```  docker-compose up ```
+```  docker build -t ntua-distributed-systems . ```
 
-2. Check status of docker containers:
+2. Run each docker container with this command:
+``docker run -e PORT=8000 -e IP=127.0.0.1 -p 8000:8000 --rm ntua-distributed-systems``
+3. Check status of docker containers:
 
 ``` docker-compose ps ``` 
 
