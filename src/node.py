@@ -2,6 +2,7 @@ from blockchain import Blockchain
 from transaction import Transaction
 from wallet import Wallet
 from block import Block, genesis
+from main import num_nodes
 
 import websockets
 import asyncio
@@ -10,7 +11,6 @@ import json
 from threading import Lock
 from collections import deque
 
-num_nodes = 5 #TODO: define it in main.py
 
 class Node:
     def __init__(self, id):
@@ -76,7 +76,7 @@ class Node:
             "balance": balance
         })
 
-    def create_transaction(self, receiver_public_key, type_of_transaction, amount):
+    def create_transaction(self, receiver_public_key, type_of_transaction, amount, message=None):
         """Creates a new transaction, directly adjusting account balances."""
 
         # Check if the account has enough balance:
@@ -92,6 +92,7 @@ class Node:
             type_of_transaction=type_of_transaction,
             amount=amount,
             nonce=self.wallet.nonce,
+            message=message
         )
 
         # Sign the transaction

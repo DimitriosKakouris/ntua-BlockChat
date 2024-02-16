@@ -29,6 +29,16 @@ class Block:
         block_json = json.dumps(block_json, sort_keys=True)
         return SHA256.new(block_json.encode()).hexdigest()
     
+    def view_block(self):
+        validator = self.validator
+        list_of_transactions = [transaction.to_dict() for transaction in self.transactions]
+        block_json ={
+            "validator": validator,
+            "transactions": list_of_transactions
+        }
+        return block_json
+
+    
 def genesis(bootstrap_node_address, n):
     genesis_block = Block(0, 1)
     genesis_block.validator = 0

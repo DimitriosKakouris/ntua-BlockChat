@@ -5,15 +5,19 @@ import base64
 import json
 
 class Transaction:
-    def __init__(self, sender_address, receiver_address, type_of_transaction, amount, nonce, message=None):
+    def __init__(self, sender_address, receiver_address, type_of_transaction, nonce, amount, message=None):
         self.sender_address = sender_address
         self.receiver_address = receiver_address
         if type_of_transaction not in ['coin', 'message']:
             raise ValueError("Value can only be 'coin' or 'message'")
         self.type_of_transaction = type_of_transaction
-        self.amount = amount
+        if type_of_transaction == 'message':
+            self.message = message
+            self.amount = len(message)
+        else:
+            self.amount = amount
+            self.message = None
         self.nonce = nonce
-        self.message = message
         self.transaction_id = self.hash_transaction()
         self.signature = None
 
@@ -42,18 +46,33 @@ class Transaction:
         """
         Hashes the transaction details to generate a unique transaction ID.
         """
-        transaction_details = {
-            'sender_address': self.sender_address,
-            'recipient_address': self.receiver_address,
-            'type_of_transaction': self.type_of_transaction,
-            'amount': self.amount,
-            'nonce': self.nonce,
-            'message': self.message
-        }
+        transaction_details = self.to_dict()
+        # transaction_details = transaction_details = {
+        #     'sender_address': self.sender_address,
+        #     'receiver_address': self.receiver_address,
+        #     'type_of_transaction': self.type_of_transaction,
+        #     'amount': self.amount,
+        #     'message': self.message,
+        #     'nonce': self.nonce,
+        # }
         transaction_string = json.dumps(transaction_details, sort_keys=True)
         h = SHA256.new(transaction_string.encode())
         return h.hexdigest()
     
+    def to_dict(self):
+        """
+        Return the transaction as a dictionary.
+        """
+        return {
+            'sender_address': self.sender_address,
+            'recipient_address': self.receiver_address,
+            'type_of_transaction': self.type_of_transaction,
+            'amount': self.amount,
+            'message': self.message,
+            'nonce': self.nonce,
+            'transaction_id': self.transaction_id,
+            'signature': self.signature
+        }
     
     def validate_transaction(self, wallet):
         """
@@ -61,14 +80,8 @@ class Transaction:
         """
         if not self.verify_signature():
             return False
-        if self.type_of_transaction == 'coin':
-            senderBalance = wallet.get_balance()
-            if senderBalance < self.amount:
-                return False
-        else:
-            senderBalance = wallet.get_balance()
-            message_size = len(self.message)
-            if senderBalance < message_size:
-                return False
+        senderBalance = wallet.get_balance()
+        if senderBalance < self.amount:
+            return False
         return True
         
