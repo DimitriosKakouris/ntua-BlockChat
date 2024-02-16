@@ -1,11 +1,21 @@
 import asyncio
 import os
 import pickle
+import argparse
 import websockets
 from node import Node
+from main import num_nodes
+
+
+
+
+################## ARGUMENTS #####################
+argParser = argparse.ArgumentParser()
+argParser.add_argument("-p", "--port", help="Port in which node is running", default=6789, type=int)
+argParser.add_argument("--ip", help="IP of the host")
+args = argParser.parse_args()
 
 node = Node()
-num_nodes = 0 #TODO: define it in main.py
 
 # WebSocket server implementation
 async def handler(websocket, path):
@@ -40,9 +50,31 @@ async def handler(websocket, path):
             else:
                 await websocket.send(pickle.dumps({'message': "The signature is not valid"}))
 
+        elif data['action'] == 'get_balance':
+            balance = await get_balance()
+            await websocket.send(pickle.dumps({'balance': balance}))
+
         # Add other actions here, e.g., 'receive_transaction', 'receive_block', etc.
         # You need to define the structure of your messages to include an 'action' field
         # and the necessary data for each action.
+                
+def get_balance():
+    return node.wallet.get_balance()
+
+def view_last_block_transactions():
+    last_block = node.chain.blocks[-1]
+    return last_block.view_block()
+
+def new_transaction(receiver_address, amount):
+    return node.create_transaction(receiver_address, 'coin', amount, message=None)
+
+def new_message(receiver_address, message):
+    return node.create_transaction(receiver_address, 'message', 0, message)
+
+def stake(amount):
+    stake_result = node.stake(amount)
+    if not stake_result:
+        print("Stake failed")
 
 # Function placeholders for sharing the chain and ring, adapt as necessary.
 async def share_chain(ring_node):
