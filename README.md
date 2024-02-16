@@ -25,16 +25,8 @@ Implement the following functions:
 
 1. From home directory (where docker-compose.yml and Dockerfile reside) run:
 
-```  docker build -t ntua-distributed-systems . ```
+```  docker build -t ntua-blockchain . ```
 
 2. Run each docker container with this command:
 
-```docker run -e PORT=8000 -e IP=127.0.0.1 -p 8000:8000 --rm ntua-distributed-systems```
-
-3. Check status of docker containers:
-
-``` docker-compose ps ``` 
-
-#### Shut down the containers:
-
-``` docker-compose down ```
+```docker run -e PORT=8000 -e IP=192.168.1.10 -p 6789:6789 --rm ntua-blockchain```
