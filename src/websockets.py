@@ -1,4 +1,5 @@
 import asyncio
+import os
 import pickle
 import websockets
 from node import Node
@@ -52,8 +53,9 @@ async def share_ring(ring_node):
     # Implement sharing the ring with a node
     pass
 
+port = os.getenv('PORT', 'port-number')
 # Start the WebSocket server
-start_server = websockets.serve(handler, "localhost", 6789)
+start_server = websockets.serve(handler, "localhost", port)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
