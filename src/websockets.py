@@ -4,19 +4,64 @@ import pickle
 import argparse
 import websockets
 from node import Node
-from main import num_nodes
-
-
+# from main import num_nodes
+from dotenv import load_dotenv
+from block import genesis, Block
 
 
 ################## ARGUMENTS #####################
 argParser = argparse.ArgumentParser()
-argParser.add_argument("-p", "--port", help="Port in which node is running", default=6789, type=int)
+argParser.add_argument( "--port", help="Port in which node is running", default=6789, type=int)
 argParser.add_argument("--ip", help="IP of the host")
 args = argParser.parse_args()
 
 node = Node()
 
+
+
+# Step 2.
+# Get info about the cluster, bootstrap node
+load_dotenv()
+total_nodes = int(os.getenv('TOTAL_NODES'))
+total_bcc = total_nodes * 1000
+
+bootstrap_node = {
+    'ip': os.getenv('BOOTSTRAP_IP'),
+    'port': os.getenv('BOOTSTRAP_PORT')
+}
+
+# Step 3.
+# Set the IP and PORT
+# DOCKER SPECIFIC
+ip_address = args.ip
+# IP ADDRESS
+# if (ip_address is None):
+#     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#     s.connect(("8.8.8.8", 80))
+#     ip_address = s.getsockname()[0]
+#     s.close()
+print('IP address: ', ip_address) # debug
+# PORT
+port = args.port
+print('PORT: ', port) # debug
+node.ip = ip_address
+node.port = str(port)
+
+# Step 4. 
+# See if node is Bootstrap node
+if ip_address == bootstrap_node["ip"] and str(port) == bootstrap_node["port"]:
+    node.id = 0
+    print("I am bootstrap")
+
+# Step 5.
+# Register node to the cluster
+if node.id == 0:
+    # Add himself to ring
+    node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.address, total_bcc)
+    genesis(node.wallet.public_key, total_nodes)
+
+else:
+    node.unicast_node(bootstrap_node)
 # WebSocket server implementation
 async def handler(websocket, path):
     async for message in websocket:
@@ -35,11 +80,11 @@ async def handler(websocket, path):
             if node_id == num_nodes - 1:
                 for ring_node in node.ring:
                     if ring_node["id"] != node.id:
-                        await share_chain(ring_node)
-                        await share_ring(ring_node)
+                        await node.share_chain(ring_node)
+                        await node.share_ring(ring_node)
                 for ring_node in node.ring:
                     if ring_node["id"] != node.id:
-                        node.create_transaction(ring_node['public_key'], ring_node['id'], 100)
+                        node.create_transaction(ring_node['public_key'], ring_node['id'], 1000)
             
             await websocket.send(pickle.dumps({'id': node_id}))
 
@@ -76,18 +121,12 @@ def stake(amount):
     if not stake_result:
         print("Stake failed")
 
-# Function placeholders for sharing the chain and ring, adapt as necessary.
-async def share_chain(ring_node):
-    # Implement sharing the chain with a node
-    pass
 
-async def share_ring(ring_node):
-    # Implement sharing the ring with a node
-    pass
 
-port = os.getenv('PORT', 'port-number')
+
+# port = os.getenv('PORT', 'port-number')
 # Start the WebSocket server
-start_server = websockets.serve(handler, "localhost", port)
+start_server = websockets.serve(handler, ip_address, 6789)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()

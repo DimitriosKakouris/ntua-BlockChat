@@ -2,8 +2,6 @@ import inquirer
 import os
 import time
 import argparse
-import requests
-from requests.exceptions import RequestException
 import json
 import asyncio
 from websockets import *

@@ -18,6 +18,8 @@ class Node:
         self.wallet = Wallet()
         self.ring = []
         self.id = id
+        self.ip = None
+        self.port = None
         self.unconfirmed_transactions = deque()
         self.stake = 0
 
@@ -117,6 +119,40 @@ class Node:
         return {"minting_time": minting_time, "success": True}
     
 
+
+    async def share_ring(self, node):
+        """
+        ! BOOTSTRAP ONLY !
+        Send the information about all the registered nodes 
+        in the ring to a specific node using WebSockets.
+        """
+        # Construct WebSocket URL for the target node
+        ws_url = f"ws://{node['ip']}:{node['port']}"
+        
+        # Establish a WebSocket connection and send the ring data
+        async with websockets.connect(ws_url) as websocket:
+            # Serialize the ring data with pickle
+            serialized_ring = pickle.dumps(self.ring)
+            # Send serialized data through WebSocket
+            await websocket.send(serialized_ring)
+            # Optionally, wait for an acknowledgment or response
+            response = await websocket.recv()
+            print("Response from node:", response)
+
+    async def share_chain(self, ring_node):
+        """Shares your blockchain to a specified node using WebSockets."""
+        ws_url = f"ws://{ring_node['ip']}:{ring_node['port']}"
+
+        async with websockets.connect(ws_url) as websocket:
+            # Serialize the blockchain data
+            serialized_chain = pickle.dumps(self.chain)
+            # Send the serialized blockchain data through the WebSocket
+            await websocket.send(serialized_chain)
+            # Optionally, wait for an acknowledgment or response
+            response = await websocket.recv()
+            print("Response from node:", response)
+    
+
     async def send_transaction(self, node, transaction):
         """Asynchronously sends a transaction to a single node via WebSocket."""
         uri = f"ws://{node['ip']}:{node['port']}"
@@ -177,6 +213,35 @@ class Node:
             async with self.chain_lock:
                 if self.validate_block(block):
                     self.chain.blocks.append(block)
+
+    async def unicast_node(self, bootstrap_node):
+        """
+        Sends information about self to the bootstrap node using WebSockets.
+        """
+        ws_url = f"ws://{bootstrap_node['ip']}:{bootstrap_node['port']}"
+        node_info = {
+            'action': 'register_node',
+            'data': {
+                'ip': self.ip,
+                'port': self.port,
+                'address': self.wallet.public_key
+            }
+        }
+
+        async with websockets.connect(ws_url) as websocket:
+            # Send the registration information as a JSON string
+            await websocket.send(json.dumps(node_info))
+            
+            # Wait for a response from the bootstrap node
+            response = await websocket.recv()
+            response_data = json.loads(response)
+
+            if response_data['status'] == 200:
+                print("Node added successfully!")
+                self.id = response_data['id']
+                print('My ID is:', self.id)
+            else:
+                print("Initialization failed")
     
 
     
