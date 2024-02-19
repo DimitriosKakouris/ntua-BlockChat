@@ -2,7 +2,7 @@ from blockchain import Blockchain
 from transaction import Transaction
 from wallet import Wallet
 from block import Block, genesis
-from main import num_nodes
+# from main import num_nodes
 
 import websockets
 import asyncio
@@ -13,7 +13,7 @@ from collections import deque
 
 
 class Node:
-    def __init__(self, id):
+    def __init__(self):
         self.chain = Blockchain()
         self.wallet = Wallet()
         self.ring = []
@@ -214,6 +214,7 @@ class Node:
                 if self.validate_block(block):
                     self.chain.blocks.append(block)
 
+   
     async def unicast_node(self, bootstrap_node):
         """
         Sends information about self to the bootstrap node using WebSockets.
@@ -242,7 +243,6 @@ class Node:
                 print('My ID is:', self.id)
             else:
                 print("Initialization failed")
-    
 
     
     def add_transaction_to_block(self, transaction):

@@ -29,4 +29,12 @@ Implement the following functions:
 
 2. Run each docker container with this command:
 
-```docker run -e PORT=8000 -e IP=192.168.1.10 -p 6789:6789 --rm ntua-blockchain```
+For bootstrap node:
+
+```docker run -it -e PORT=8000 -e IP=127.0.0.1 -p 8000:8000 --rm ntua-blockchain```
+
+3. Run each docker container with this command:
+
+For other nodes:
+
+```docker run -it -e PORT=800x -e IP=127.0.0.1 -p 800x:8000 --rm ntua-blockchain```

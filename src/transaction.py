@@ -46,15 +46,14 @@ class Transaction:
         """
         Hashes the transaction details to generate a unique transaction ID.
         """
-        transaction_details = self.to_dict()
-        # transaction_details = transaction_details = {
-        #     'sender_address': self.sender_address,
-        #     'receiver_address': self.receiver_address,
-        #     'type_of_transaction': self.type_of_transaction,
-        #     'amount': self.amount,
-        #     'message': self.message,
-        #     'nonce': self.nonce,
-        # }
+        transaction_details = {
+        'sender_address': self.sender_address,
+        'recipient_address': self.receiver_address,
+        'type_of_transaction': self.type_of_transaction,
+        'amount': self.amount,
+        'message': self.message,
+        'nonce': self.nonce,
+    }
         transaction_string = json.dumps(transaction_details, sort_keys=True)
         h = SHA256.new(transaction_string.encode())
         return h.hexdigest()

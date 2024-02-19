@@ -33,11 +33,14 @@ COPY ./requirements.txt /app/requirements.txt
 # Copy the current directory contents into the container at /app
 COPY ./src /app
 
+
+# Make the shell script executable
+RUN chmod +x /app/entrypoint.sh
+
 # Install any needed packages specified in requirements.txt
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
-# Expose port 8000 for the FastAPI app to run on
-EXPOSE ${PORT}
+EXPOSE $PORT
 
-# Run the command to start
-CMD ["sh", "-c", "python websockets.py --port ${PORT} --ip ${IP}"]
+# Use the shell script as the entry point
+ENTRYPOINT ["/app/entrypoint.sh"]
