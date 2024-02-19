@@ -225,9 +225,10 @@ class Node:
             'data': {
                 'ip': self.ip,
                 'port': self.port,
-                'address': self.wallet.public_key
+                # 'address': self.wallet.public_key
             }
         }
+        print("I have unicasted to the bootstrap node")
 
         async with websockets.connect(ws_url) as websocket:
             # Send the registration information as a JSON string

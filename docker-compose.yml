@@ -1,51 +1,79 @@
-# version: '3.7'
+version: '3'
+services:
+  node1:
+    build: .
+    stdin_open: true
+    tty: true
+    environment:
+      - IP=172.19.0.2
+      - PORT=8000
+      - BOOTSTRAP=True
+      - IP_BOOTSTRAP=172.19.02
+      - PORT_BOOTSTRAP=8000
+      - NODES=5
+      - CAPACITY=2
+    networks:
+      - blockchat
 
-# services:
-#   node1:
-#     build: .
-#     ports:
-#       - "5001:6789"
-#     environment:
-#       - NODE_ID=1
-#     networks:
-#       - blockchain_network
+  node2:
+    build: .
+    stdin_open: true
+    tty: true
+    environment:
+      - IP=172.19.0.3
+      - PORT=8001
+      - BOOTSTRAP=False
+      - IP_BOOTSTRAP=172.19.0.2
+      - PORT_BOOTSTRAP=8000
+      - NODES=5
+      - CAPACITY=2
+    networks:
+      - blockchat
 
-#   node2:
-#     build: .
-#     ports:
-#       - "5002:6789"
-#     environment:
-#       - NODE_ID=2
-#     networks:
-#       - blockchain_network
+  node3:
+    build: .
+    stdin_open: true
+    tty: true
+    environment:
+      - IP=172.19.0.4
+      - PORT=8002
+      - BOOTSTRAP=False
+      - IP_BOOTSTRAP=172.19.0.2
+      - PORT_BOOTSTRAP=8000
+      - NODES=5
+      - CAPACITY=2
+    networks:
+      - blockchat
 
-#   node3:
-#     build: .
-#     ports:
-#       - "5003:6789"
-#     environment:
-#       - NODE_ID=3
-#     networks:
-#       - blockchain_network
+  node4:
+    build: .
+    stdin_open: true
+    tty: true
+    environment:
+      - IP=172.19.0.5
+      - PORT=8003
+      - BOOTSTRAP=False
+      - IP_BOOTSTRAP=172.19.0.2
+      - PORT_BOOTSTRAP=8000
+      - NODES=5
+      - CAPACITY=2
+    networks:
+      - blockchat
 
-#   node4:
-#     build: .
-#     ports:
-#       - "5004:6789"
-#     environment:
-#       - NODE_ID=4
-#     networks:
-#       - blockchain_network
+  node5:
+    build: .
+    stdin_open: true
+    tty: true
+    environment:
+      - IP=172.19.0.6
+      - PORT=8004
+      - BOOTSTRAP=False
+      - IP_BOOTSTRAP=172.19.0.2
+      - PORT_BOOTSTRAP=8000
+      - NODES=5
+      - CAPACITY=2
+    networks:
+      - blockchat
 
-#   node5:
-#     build: .
-#     ports:
-#       - "5005:6789"
-#     environment:
-#       - NODE_ID=5
-#     networks:
-#       - blockchain_network
-
-# networks:
-#   blockchain_network:
-#     driver: bridge
+networks:
+  blockchat:

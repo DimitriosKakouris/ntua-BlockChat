@@ -45,8 +45,33 @@ async def register_node():
         node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key, total_bcc)
         genesis(node.wallet.public_key, total_nodes)
 
-    else:
-        await node.unicast_node(bootstrap_node)
+    else: 
+        print("Just before unicasting to the bootstrap node")
+        ws_url = f"ws://{bootstrap_node['ip']}:{bootstrap_node['port']}"
+        node_info = {
+                    'action': 'register_node',
+                    'data': {
+                        'ip': node.ip,
+                        'port': node.port,
+                        # 'address': self.wallet.public_key
+                    }
+                }
+        print("I have unicasted to the bootstrap node")
+
+        async with websockets.connect(ws_url) as websocket:
+            # Send the registration information as a JSON string
+            await websocket.send(json.dumps(node_info))
+            
+            # Wait for a response from the bootstrap node
+            response = await websocket.recv()
+            response_data = json.loads(response)
+            
+            node.id = response_data['id']
+            print('My ID is:', node.id)
+
+        # await node.share_ring(bootstrap_node)
+            
+
 
 def get_balance():
     return node.wallet.get_balance()
@@ -66,7 +91,30 @@ def stake(amount):
     if not stake_result:
         print("Stake failed")
 
+
+async def send_websocket_request(action, data,ip, port):
+    # Define the WebSocket URL
+    ws_url = f"ws://{ip}:{port}"
+
+    # Define the request
+    request = {
+        'action': action,
+        'data': data
+    }
+
+    print(f"Sending request to {ws_url}: {request}")
+    # Connect to the WebSocket server and send the request
+    async with websockets.connect(ws_url) as websocket:
+        await websocket.send(json.dumps(request))
+
+        # Wait for a response from the server
+        response = await websocket.recv()
+
+    # Return the response
+    return json.loads(response)
+
 async def handler(websocket, path):
+    
     async for message in websocket:
 
         data = json.loads(message)
@@ -75,15 +123,20 @@ async def handler(websocket, path):
         
         
         if action == 'register_node':
-            node_key = data['public_key']
-            node_ip = data['ip']
-            node_port = data['port']
+        
+            node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key, 0)
+            # node_key = data['public_key']
+            node_ip = data['data']['ip']
+            node_port = data['data']['port']
             node_id = len(node.ring)
-            print (node.id)
-            
-            await register_node()
-            
-            if node_id == 5 - 1:
+           
+
+           
+            # Block until node_id gets to 4
+            while node_id < 4:
+                await asyncio.sleep(1)  # Pause for 1 second
+
+            if node_id == total_nodes - 1:
                 print("All nodes have joined the network")
                 for ring_node in node.ring:
                     if ring_node["id"] != node.id:
@@ -112,6 +165,7 @@ async def handler(websocket, path):
                 await websocket.send(json.dumps({'message': "The signature is not valid"}))
 
         elif data['action'] == 'get_balance':
+            print("Getting balance")
             balance = get_balance()
             await websocket.send(json.dumps({'balance': balance}))
 
@@ -119,7 +173,8 @@ async def handler(websocket, path):
 async def main():
     async with websockets.serve(handler, IP_ADDRESS, PORT):
         print(f"Server started at ws://{IP_ADDRESS}:{PORT}")
-        print(node.id)
+        # Register the node with the bootstrap node
+        await register_node()
         await asyncio.Future()  # This will keep the server running indefinitely
 
 # Run the server

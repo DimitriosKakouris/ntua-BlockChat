@@ -5,7 +5,7 @@ import argparse
 import json
 import asyncio
 import websockets
-# from websockets_serve import new_transaction, new_message, view_last_block_transactions, get_balance
+from websockets_serve import send_websocket_request
 
 from texttable import Texttable
 
@@ -22,13 +22,6 @@ port = args.port
 # address = 'ws://' + str(ip_address) + ':' + str(port)
 address = f'ws://{ip_address}:{port}'
 
-async def send_websocket_request(path, data):
-    async with websockets.connect(address) as websocket:
-        # Convert the data to JSON and send it
-        await websocket.send(json.dumps({'path': path, 'data': data}))
-        # Wait for a response and return it
-        response = await websocket.recv()
-        return response
 
 # Helper function to clear the console
 def clear_console():
@@ -54,7 +47,7 @@ async def client():
             ]
             answers = inquirer.prompt(questions)
             # Send transaction request
-            response = await send_websocket_request('new_transaction', answers)
+            response = await send_websocket_request('new_transaction', answers, ip_address, port)
             print(response)
 
         elif choice == 'New Message':
@@ -64,17 +57,18 @@ async def client():
             ]
             answers = inquirer.prompt(questions)
             # Send message request
-            response = await send_websocket_request('new_message', answers)
+            response = await send_websocket_request('new_message', answers, ip_address, port)
             print(response)
             
         elif choice == 'View last transactions':
             # Assuming you have a specific message format for this request
-            response = await send_websocket_request('view_last_transactions', {})
+            response = await send_websocket_request('view_last_transactions', {},ip_address, port)
             print(response)
             
         elif choice == 'Show balance':
             # Assuming you have a specific message format for this request
-            response = await send_websocket_request('get_balance', {})
+            print(ip_address, port)
+            response = await send_websocket_request('get_balance', {}, ip_address, port)
             print(response)
 
         elif choice == 'Help':
