@@ -35,7 +35,7 @@ Implement the following functions:
 
 For bootstrap node:
 
-```docker run -it -e PORT=8001 -e IP=172.18.0.3 -p 8001:8000 --network ntua-blockchain_blockchat --rm ntua-blockchain```
+```docker run -it -e PORT=8000 -e IP=172.18.0.2 -p 8000:8000 --network ntua-blockchain_blockchat --rm ntua-blockchain```
 
 4. Run each client docker container with this command:
 
