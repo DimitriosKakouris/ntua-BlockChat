@@ -8,8 +8,24 @@ class Blockchain:
         #block = Block()
         self.blocks = [] #block.genesis()
 
+    
+    def to_dict(self):
+        return {
+            'blocks': [block.to_dict() for block in self.blocks]
+        }
+    
+    
+    def from_dict(self, data):
+        for block_data in data['blocks']:
+            block = Block.from_dict(block_data)  # Assuming Block has a similar from_dict method
+            self.add_block(block)
+        return self
+
     def add_block(self, block):
         self.blocks.append(block)
+
+    def size(self):
+        return len(self.blocks)
 
     def mint_block(self, node, capacity):
         if len(self.current_transactions) >= capacity: 

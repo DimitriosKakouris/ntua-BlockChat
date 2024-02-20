@@ -19,7 +19,7 @@ total_nodes = int(os.getenv('TOTAL_NODES', 5))
 total_bcc = total_nodes * 1000
 
 bootstrap_node = {
-    'ip': os.getenv('BOOTSTRAP_IP', '127.0.0.1'),
+    'ip': os.getenv('BOOTSTRAP_IP', '172.18.0.2'),
     'port': os.getenv('BOOTSTRAP_PORT', '8000')
 }
 
@@ -35,6 +35,7 @@ node.port = str(PORT)
 # See if node is Bootstrap node
 if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
     node.id = 0
+    bootstrap_node = node
     print("I am bootstrap")
 
 # Step 5.
@@ -42,8 +43,8 @@ if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
 async def register_node():
     if node.id == 0:
         # Add himself to ring
-        node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key, total_bcc)
-        genesis(node.wallet.public_key, total_nodes)
+        node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key)
+        node.chain.add_block(genesis(node.wallet.public_key, total_nodes))
 
     else: 
         print("Just before unicasting to the bootstrap node")
@@ -53,7 +54,7 @@ async def register_node():
                     'data': {
                         'ip': node.ip,
                         'port': node.port,
-                        # 'address': self.wallet.public_key
+                        'public_key': node.wallet.public_key
                     }
                 }
         print("I have unicasted to the bootstrap node")
@@ -113,43 +114,47 @@ async def send_websocket_request(action, data,ip, port):
     # Return the response
     return json.loads(response)
 
-async def handler(websocket, path):
-    
-    async for message in websocket:
+connected_nodes = []
 
+async def handler(websocket, path):
+    global connected_nodes
+
+    async for message in websocket:
         data = json.loads(message)
         
-        action = data.get('action')
-        
-        
-        if action == 'register_node':
-        
-            node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key, total_bcc)
-            # node_key = data['public_key']
-            node_ip = data['data']['ip']
-            node_port = data['data']['port']
-            node_id = len(node.ring)
-            print('Node ID:', node_id,'Node public key:', node.wallet.public_key,'Node coin:', total_bcc)   
-           
 
-           
-            # # Block until node_id gets to 4
-            # while node_id < 4:
-            #     await asyncio.sleep(1)  # Pause for 1 second
+        if data['action'] == 'register_node':
+            new_node_data = data.get('data')
 
-            # if node_id == total_nodes - 1:
-            print("All nodes have joined the network")
-            for ring_node in node.ring:
-                if ring_node["id"] != node.id:
-                    await node.share_chain(ring_node)
-                    await node.share_ring(ring_node)
-            for ring_node in node.ring:
-                if ring_node["id"] != node.id:
-                    await node.create_transaction(ring_node['public_key'], ring_node['id'], 1000)
-            
+            # Store the new node's data
+            connected_nodes.append(new_node_data)
+
+            # If there are 4 nodes connected, broadcast the chain and the ring
+            if len(connected_nodes) == 1:
+                print("1 nodes have joined the network")
+
+                # Register the nodes to the ring
+                for i, node_data in enumerate(connected_nodes):
+                    bootstrap_node.register_node_to_ring(i+1, node_data['ip'], node_data['port'], node_data['public_key'])
+
+                print("Ring:", bootstrap_node.ring)
+                # Share the chain and the ring
+                for ring_node in bootstrap_node.ring:
+                    if ring_node["id"] != 0:
+                        await bootstrap_node.share_chain(ring_node)
+                        await bootstrap_node.share_ring(ring_node)
+                        print("Sending coins to node", ring_node['id'])
+                        await node.create_transaction(ring_node['public_key'],'coin' ,1000)
+
+                # Reset the connected nodes
+                connected_nodes = []
+
+            # Send back the node ID
+            node_id = len(bootstrap_node.ring) - 1
             await websocket.send(json.dumps({'id': node_id}))
 
-        elif action == 'new_transaction':
+
+        elif data['action'] == 'new_transaction':
             # Extract relevant data
             receiver = data['data']['receiver']
             amount = data['data']['amount']
@@ -157,6 +162,17 @@ async def handler(websocket, path):
             # Perform the transaction
             response = await node.create_transaction(receiver, 'coin', amount)
             print(response)
+            # Send back a JSON response
+            await websocket.send(json.dumps({'response': response}))
+
+        elif data['action'] == 'new_message':
+            # Extract relevant data
+            receiver = data['data']['receiver']
+            message = data['data']['message']
+
+            # Perform the transaction
+            response = await node.create_transaction(receiver, 'message', 0, message)
+
             # Send back a JSON response
             await websocket.send(json.dumps({'response': response}))
         
@@ -173,6 +189,43 @@ async def handler(websocket, path):
             wallet_address = node.wallet.public_key
             await websocket.send(json.dumps({'wallet_address':wallet_address,'balance': balance}))
 
+        elif data['action'] == 'update_ring':
+            new_ring = data['data']
+            print("Updating ring")
+            node.ring = new_ring
+            print("Ring updated")
+
+            await websocket.send(json.dumps({'message': "Ring updated"}))
+
+        elif data['action'] == 'update_chain':
+           
+            # Get the serialized chain from the other node
+            serialized_chain = data['data']
+
+            # Deserialize the chain
+            chain = node.chain.from_dict(serialized_chain)
+
+            # print("Chain:", chain)
+            # print("Blocks:", chain.blocks)
+            # print("Number of blocks:", chain.size())
+            # print("Before iteration")
+            # Add the chain to the node's blockchain
+            node.chain = chain
+            # for block in chain.blocks:
+            #     try:
+            #         node.chain.add_block(block)
+            #     except Exception as e:
+            #         print("Exception during block addition:", e)
+            # print("After iteration")
+                    
+            
+            await websocket.send(json.dumps({'message': "Chain updated"}))
+
+        elif data['action'] == 'update_transaction_pool':
+            new_transaction = data['data']
+            node.transaction_pool.append(new_transaction)
+            await websocket.send(json.dumps({'status':'OK','message': "Transaction pool updated"}))
+            
 # Start the WebSocket server
 async def main():
     async with websockets.serve(handler, IP_ADDRESS, PORT):

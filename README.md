@@ -27,14 +27,18 @@ Implement the following functions:
 
 ```  docker build -t ntua-blockchain . ```
 
-2. Run each docker container with this command:
+2. Create network:
 
-For bootstrap node:
-
-```docker run -it -e PORT=8000 -e IP=127.0.0.1 -p 8000:8000 --rm ntua-blockchain```
+``` docker network create --subnet=172.18.0.0/16 ntua-blockchain_blockchat ```
 
 3. Run each docker container with this command:
 
+For bootstrap node:
+
+```docker run -it -e PORT=8001 -e IP=172.18.0.3 -p 8001:8000 --network ntua-blockchain_blockchat --rm ntua-blockchain```
+
+4. Run each client docker container with this command:
+
 For other nodes:
 
-```docker run -it -e PORT=800x -e IP=127.0.0.1 -p 800x:8000 --rm ntua-blockchain```
+```docker run -it -e PORT=800x -e IP=172.18.0.y -p 800x:8000 --network ntua-blockchain_blockchat --rm ntua-blockchain```

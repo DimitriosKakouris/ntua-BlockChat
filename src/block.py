@@ -37,6 +37,24 @@ class Block:
             "transactions": list_of_transactions
         }
         return block_json
+    
+    def to_dict(self):
+        return {
+            'index': self.index,
+            'timestamp': self.timestamp,
+            'transactions': [transaction.to_dict() for transaction in self.transactions],  # Assuming Transaction has a to_dict method
+            'previous_hash': self.previous_hash,
+            'hash': self.current_hash,
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        block = cls(data['index'], data['previous_hash'])
+        block.timestamp = data['timestamp']
+        block.transactions = [data['transactions']]
+        block.current_hash = data['hash']
+
+        return block
 
     
 def genesis(bootstrap_node_address, n):

@@ -2,7 +2,8 @@ from blockchain import Blockchain
 from transaction import Transaction
 from wallet import Wallet
 from block import Block, genesis
-# from main import num_nodes
+# from websockets_serve import send_websocket_request
+# # from main import num_nodes
 
 import websockets
 import asyncio
@@ -14,6 +15,27 @@ from collections import deque
 
 num_nodes = 4
 
+async def send_websocket_request(action, data,ip, port):
+        # Define the WebSocket URL
+        ws_url = f"ws://{ip}:{port}"
+
+        # Define the request
+        request = {
+            'action': action,
+            'data': data
+        }
+
+        print(f"Sending request to {ws_url}: {request}")
+        # Connect to the WebSocket server and send the request
+        async with websockets.connect(ws_url) as websocket:
+            await websocket.send(json.dumps(request))
+
+            # Wait for a response from the server
+            response = await websocket.recv()
+
+        # Return the response
+        return json.loads(response)
+
 class Node:
     def __init__(self):
         self.chain = Blockchain()
@@ -22,7 +44,7 @@ class Node:
         self.id = id
         self.ip = None
         self.port = None
-        self.unconfirmed_transactions = deque()
+        self.transaction_pool = []
         self.stake = 0
         if self.chain.blocks:
                 self.current_block = self.chain.blocks[-1]
@@ -46,6 +68,8 @@ class Node:
             self.stake = amount
             return True
     
+    
+
     # node.curren
     def create_new_block(self):
         """Creates a new block"""
@@ -76,21 +100,21 @@ class Node:
                 return False
         return True
     
-    def register_node_to_ring(self, id, ip, port, public_key, balance):
+    def register_node_to_ring(self, id, ip, port, public_key):
         self.ring.append({
             "id": id,
             "ip": ip,
             "port": port,
             "public_key": public_key,
-            "balance": balance
+           
         })
 
     async def create_transaction(self, receiver_public_key, type_of_transaction, amount, message=None):
         """Creates a new transaction, directly adjusting account balances."""
 
         # Check if the account has enough balance:
-        # if self.wallet.balance < int(amount):
-        #     return {"minting_time": 0, "success": False}
+        if self.wallet.balance < int(amount):
+            return {"minting_time": 0, "success": False}
 
         ## REMOVED BALANCE CHECK FOR TESTING PURPOSES
 
@@ -136,41 +160,50 @@ class Node:
         Send the information about all the registered nodes 
         in the ring to a specific node using WebSockets.
         """
-        # Construct WebSocket URL for the target node
-        ws_url = f"ws://{node['ip']}:{node['port']}"
+
+        await send_websocket_request('update_ring', self.ring, node['ip'], node['port'])
+
+        # # Construct WebSocket URL for the target node
+        # ws_url = f"ws://{node['ip']}:{node['port']}"
         
-        # Establish a WebSocket connection and send the ring data
-        async with websockets.connect(ws_url) as websocket:
-            # Serialize the ring data with pickle
-            serialized_ring = pickle.dumps(self.ring)
-            # Send serialized data through WebSocket
-            await websocket.send(serialized_ring)
-            # Optionally, wait for an acknowledgment or response
-            response = await websocket.recv()
-            print("Response from node:", response)
+        # # Establish a WebSocket connection and send the ring data
+        # async with websockets.connect(ws_url) as websocket:
+        #     # Serialize the ring data with pickle
+        #     serialized_ring = json.dumps(self.ring)
+        #     # Send serialized data through WebSocket
+        #     await websocket.send(serialized_ring)
+        #     # Optionally, wait for an acknowledgment or response
+        #     response = await websocket.recv()
+        #     print("Response from node:", response)
 
     async def share_chain(self, ring_node):
-        """Shares your blockchain to a specified node using WebSockets."""
-        ws_url = f"ws://{ring_node['ip']}:{ring_node['port']}"
+        """
+        ! BOOTSTRAP ONLY !
+        Send the information about all the registered nodes 
+        in the ring to a specific node using WebSockets.
+        """
 
-        async with websockets.connect(ws_url) as websocket:
-            # Serialize the blockchain data
-            serialized_chain = pickle.dumps(self.chain)
-            # Send the serialized blockchain data through the WebSocket
-            await websocket.send(serialized_chain)
-            # Optionally, wait for an acknowledgment or response
-            response = await websocket.recv()
-            print("Response from node:", response)
+        response = await send_websocket_request('update_chain', self.chain.to_dict(), ring_node['ip'], ring_node['port'])
+        # """Shares your blockchain to a specified node using WebSockets."""
+        # ws_url = f"ws://{ring_node['ip']}:{ring_node['port']}"
+
+        # async with websockets.connect(ws_url) as websocket:
+        #     # Serialize the blockchain data
+        #     serialized_chain = json.dumps(self.chain.to_dict())
+        #     # Send the serialized blockchain data through the WebSocket
+        #     await websocket.send(serialized_chain)
+        #     # Optionally, wait for an acknowledgment or response
+        #     response = await websocket.recv()
+        #     print("Response from node:", response)
+        return response
     
 
     async def send_transaction(self, node, transaction):
         """Asynchronously sends a transaction to a single node via WebSocket."""
-        uri = f"ws://{node['ip']}:{node['port']}"
-        async with websockets.connect(uri) as websocket:
-            # Serialize and send the transaction
-            await websocket.send(pickle.dumps(transaction))
-            response = await websocket.recv()
-            return json.loads(response)
+        response = await send_websocket_request('update_transaction_pool', transaction.to_dict(), node['ip'], node['port'])
+        
+        # Return the response
+        return response
 
     async def broadcast_transaction(self, transaction):
         """Broadcasts a transaction to the network using WebSockets."""
@@ -185,8 +218,9 @@ class Node:
         for task in tasks:
             responses.append(await task)
 
+        print("Responses:", responses)
         # Check responses for validation and receipt acknowledgment
-        if not all(response['status'] == 'success' for response in responses):
+        if not all(response.get('status') == 'OK' for response in responses):
             return {"minting_time": 0, "success": False}
 
         # Add transaction to block (assuming this is an async operation)
@@ -256,25 +290,29 @@ class Node:
                 print("Initialization failed")
 
     
-    def add_transaction_to_block(self, transaction):
+    async def add_transaction_to_block(self, transaction):
         """Adds a transaction to a block, check if minting is needed and update
         the wallet and balances of participating nodes"""
 
         # Add transaction to the wallet of the sender and the receiver
         if transaction.sender_address  == self.wallet.public_key:
             self.wallet.transactions.append(transaction)
+            self.wallet.balance -= int(transaction.amount)
+
+        # Does not work because it is not called by receiver
         if transaction.receiver_address == self.wallet.public_key:
             self.wallet.transactions.append(transaction)
+            self.wallet.balance += int(transaction.amount)
 
         # Update the balance of the sender and the receiver
-        for ring_node in self.ring:
-            if ring_node['public_key'] == transaction.sender_address:
-                ring_node['balance'] -= int(transaction.amount)
-            if ring_node['public_key'] == transaction.receiver_address:
-                ring_node['balance'] += int(transaction.amount)
+        # for ring_node in self.ring:
+        #     if ring_node['public_key'] == transaction.sender_address:
+        #         ring_node.wallet.balance -= int(transaction.amount)
+        #     if ring_node['public_key'] == transaction.receiver_address:
+        #         ring_node.wallet.balance += int(transaction.amount)
 
         # If chain has only the genesis block, create new block
-        if len(self.chain.blocks) == 1:
+        if self.chain.size() == 1:
             self.current_block = self.create_new_block()
 
         self.block_lock.acquire()
