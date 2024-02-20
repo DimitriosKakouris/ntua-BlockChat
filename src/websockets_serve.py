@@ -80,8 +80,8 @@ def view_last_block_transactions():
     last_block = node.chain.blocks[-1]
     return last_block.view_block()
 
-def new_transaction(receiver_address, amount):
-    return node.create_transaction(receiver_address, 'coin', amount, message=None)
+# async def new_transaction(receiver_address, amount):
+#     return await node.create_transaction(receiver_address, 'coin', amount, message=None)
 
 def new_message(receiver_address, message):
     return node.create_transaction(receiver_address, 'message', 0, message)
@@ -124,27 +124,28 @@ async def handler(websocket, path):
         
         if action == 'register_node':
         
-            node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key, 0)
+            node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key, total_bcc)
             # node_key = data['public_key']
             node_ip = data['data']['ip']
             node_port = data['data']['port']
             node_id = len(node.ring)
+            print('Node ID:', node_id,'Node public key:', node.wallet.public_key,'Node coin:', total_bcc)   
            
 
            
-            # Block until node_id gets to 4
-            while node_id < 4:
-                await asyncio.sleep(1)  # Pause for 1 second
+            # # Block until node_id gets to 4
+            # while node_id < 4:
+            #     await asyncio.sleep(1)  # Pause for 1 second
 
-            if node_id == total_nodes - 1:
-                print("All nodes have joined the network")
-                for ring_node in node.ring:
-                    if ring_node["id"] != node.id:
-                        await node.share_chain(ring_node)
-                        await node.share_ring(ring_node)
-                for ring_node in node.ring:
-                    if ring_node["id"] != node.id:
-                        node.create_transaction(ring_node['public_key'], ring_node['id'], 1000)
+            # if node_id == total_nodes - 1:
+            print("All nodes have joined the network")
+            for ring_node in node.ring:
+                if ring_node["id"] != node.id:
+                    await node.share_chain(ring_node)
+                    await node.share_ring(ring_node)
+            for ring_node in node.ring:
+                if ring_node["id"] != node.id:
+                    await node.create_transaction(ring_node['public_key'], ring_node['id'], 1000)
             
             await websocket.send(json.dumps({'id': node_id}))
 
@@ -152,8 +153,10 @@ async def handler(websocket, path):
             # Extract relevant data
             receiver = data['data']['receiver']
             amount = data['data']['amount']
+            print(f"New transaction in websockets server: {receiver} -> {amount}")
             # Perform the transaction
-            response = node.new_transaction(receiver, amount)
+            response = await node.create_transaction(receiver, 'coin', amount)
+            print(response)
             # Send back a JSON response
             await websocket.send(json.dumps({'response': response}))
         
@@ -167,7 +170,8 @@ async def handler(websocket, path):
         elif data['action'] == 'get_balance':
             print("Getting balance")
             balance = get_balance()
-            await websocket.send(json.dumps({'balance': balance}))
+            wallet_address = node.wallet.public_key
+            await websocket.send(json.dumps({'wallet_address':wallet_address,'balance': balance}))
 
 # Start the WebSocket server
 async def main():

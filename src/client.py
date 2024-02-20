@@ -42,12 +42,17 @@ async def client():
 
         if choice == 'New Transaction':
             questions = [
-                inquirer.Text(name='receiver', message='What is the Receiver ID of the lucky one?'),
+                inquirer.Text(name='receiver', message='What is the Receiver wallet address?'),
                 inquirer.Text(name='amount', message='How many BlockChat Coins to send?'),
             ]
             answers = inquirer.prompt(questions)
-            # Send transaction request
-            response = await send_websocket_request('new_transaction', answers, ip_address, port)
+             # Read the receiver ID from the text file
+            with open(answers['receiver'], 'r') as file:
+                receiver = file.read().strip()
+
+             # Send transaction request
+            transaction_data = {'receiver': receiver, 'amount': answers['amount']}
+            response = await send_websocket_request('new_transaction', transaction_data, ip_address, port)
             print(response)
 
         elif choice == 'New Message':
@@ -57,6 +62,7 @@ async def client():
             ]
             answers = inquirer.prompt(questions)
             # Send message request
+            print(answers)
             response = await send_websocket_request('new_message', answers, ip_address, port)
             print(response)
             

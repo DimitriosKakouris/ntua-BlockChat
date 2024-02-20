@@ -12,6 +12,8 @@ from threading import Lock
 from collections import deque
 
 
+num_nodes = 4
+
 class Node:
     def __init__(self):
         self.chain = Blockchain()
@@ -22,6 +24,10 @@ class Node:
         self.port = None
         self.unconfirmed_transactions = deque()
         self.stake = 0
+        if self.chain.blocks:
+                self.current_block = self.chain.blocks[-1]
+        else:
+                self.current_block = None  # Or create a new genesis block # Check if it is the correct way to handle current
 
         self.block_lock = Lock()
         self.capacity = 5
@@ -39,7 +45,8 @@ class Node:
         else:
             self.stake = amount
             return True
-        
+    
+    # node.curren
     def create_new_block(self):
         """Creates a new block"""
         
@@ -78,12 +85,14 @@ class Node:
             "balance": balance
         })
 
-    def create_transaction(self, receiver_public_key, type_of_transaction, amount, message=None):
+    async def create_transaction(self, receiver_public_key, type_of_transaction, amount, message=None):
         """Creates a new transaction, directly adjusting account balances."""
 
         # Check if the account has enough balance:
-        if self.wallet.balance < amount:
-            return {"minting_time": 0, "success": False}
+        # if self.wallet.balance < int(amount):
+        #     return {"minting_time": 0, "success": False}
+
+        ## REMOVED BALANCE CHECK FOR TESTING PURPOSES
 
         # Create the transaction
         transaction = Transaction(
@@ -101,7 +110,8 @@ class Node:
         transaction.sign_transaction(self.wallet.private_key)
 
         # Broadcast transaction
-        broadcast = self.broadcast_transaction(transaction)
+        broadcast = await self.broadcast_transaction(transaction)
+        print("Broadcast response:", broadcast)
         minting_time = broadcast["minting_time"]
         success = broadcast["success"]
 
@@ -259,12 +269,12 @@ class Node:
         # Update the balance of the sender and the receiver
         for ring_node in self.ring:
             if ring_node['public_key'] == transaction.sender_address:
-                ring_node['balance'] -= transaction.amount
+                ring_node['balance'] -= int(transaction.amount)
             if ring_node['public_key'] == transaction.receiver_address:
-                ring_node['balance'] += transaction.amount
+                ring_node['balance'] += int(transaction.amount)
 
         # If chain has only the genesis block, create new block
-        if self.current_block is None:
+        if len(self.chain.blocks) == 1:
             self.current_block = self.create_new_block()
 
         self.block_lock.acquire()

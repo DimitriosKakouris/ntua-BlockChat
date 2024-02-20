@@ -1,79 +1,68 @@
-version: '3'
+version: '3.8'
 services:
   node1:
-    build: .
-    stdin_open: true
-    tty: true
+    image: ntua-blockchain
     environment:
-      - IP=172.19.0.2
+      - TERM=xterm
       - PORT=8000
-      - BOOTSTRAP=True
-      - IP_BOOTSTRAP=172.19.02
-      - PORT_BOOTSTRAP=8000
-      - NODES=5
-      - CAPACITY=2
+      - IP=172.18.0.2
+    ports:
+      - "8000:8000"
     networks:
-      - blockchat
+     blockchat:
+        ipv4_address: 172.18.0.2
 
   node2:
-    build: .
-    stdin_open: true
-    tty: true
+    image: ntua-blockchain
     environment:
-      - IP=172.19.0.3
+      - TERM=xterm
       - PORT=8001
-      - BOOTSTRAP=False
-      - IP_BOOTSTRAP=172.19.0.2
-      - PORT_BOOTSTRAP=8000
-      - NODES=5
-      - CAPACITY=2
+      - IP=172.18.0.3
+    ports:
+      - "8001:8000"
     networks:
-      - blockchat
+     blockchat:
+        ipv4_address: 172.18.0.3
 
   node3:
-    build: .
-    stdin_open: true
-    tty: true
+    image: ntua-blockchain
     environment:
-      - IP=172.19.0.4
+      - TERM=xterm
       - PORT=8002
-      - BOOTSTRAP=False
-      - IP_BOOTSTRAP=172.19.0.2
-      - PORT_BOOTSTRAP=8000
-      - NODES=5
-      - CAPACITY=2
+      - IP=172.18.0.4
+    ports:
+      - "8002:8000"
     networks:
-      - blockchat
+     blockchat:
+        ipv4_address: 172.18.0.4
 
   node4:
-    build: .
-    stdin_open: true
-    tty: true
+    image: ntua-blockchain
     environment:
-      - IP=172.19.0.5
+      - TERM=xterm
       - PORT=8003
-      - BOOTSTRAP=False
-      - IP_BOOTSTRAP=172.19.0.2
-      - PORT_BOOTSTRAP=8000
-      - NODES=5
-      - CAPACITY=2
+      - IP=172.18.0.5
+    ports:
+      - "8003:8000"
     networks:
-      - blockchat
+     blockchat:
+        ipv4_address: 172.18.0.5
 
   node5:
-    build: .
-    stdin_open: true
-    tty: true
+    image: ntua-blockchain
     environment:
-      - IP=172.19.0.6
+      - TERM=xterm
       - PORT=8004
-      - BOOTSTRAP=False
-      - IP_BOOTSTRAP=172.19.0.2
-      - PORT_BOOTSTRAP=8000
-      - NODES=5
-      - CAPACITY=2
+      - IP=172.18.0.6
+    ports:
+      - "8004:8000"
     networks:
-      - blockchat
+     blockchat:
+        ipv4_address: 172.18.0.6
 
 networks:
-  blockchat:
+ blockchat:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16

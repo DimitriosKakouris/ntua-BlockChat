@@ -1,13 +1,15 @@
 # FROM python:3.10.13-slim
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim-buster
+
 
 # LABEL Blockchat Blockchain
 
 # # Environment Variables
-# ENV IP                   192.168.1.10
-# ENV PORT                 6789
+
 # ENV BOOTSTRAP            True
-# ENV IP_BOOTSTRAP	 	 192.168.1.10
-# ENV PORT_BOOTSTRAP	 	 6789
+# ENV IP_BOOTSTRAP	 	 172.18.0.2
+# ENV PORT_BOOTSTRAP	 	 8000
 # ENV NODES		 		 5
 # ENV CAPACITY		 	 2
 
@@ -23,8 +25,6 @@
 # RUN apt-get update && apt-get install gcc -y && \
 # pip install -r requirements.txt
 
-# Use an official Python runtime as a parent image
-FROM python:3.10-slim-buster
 
 # Set the working directory to /app
 WORKDIR /app

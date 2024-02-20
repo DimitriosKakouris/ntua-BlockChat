@@ -21,10 +21,14 @@ class Transaction:
         self.transaction_id = self.hash_transaction()
         self.signature = None
 
-    def sign_transaction(self, private_key):
+    def sign_transaction(self, private_key_string):
         """
         Sign the transaction with the sender's private key.
         """
+
+         # Convert the private key from a string to a key object
+        private_key = RSA.import_key(private_key_string)
+
         signer = pkcs1_15.new(private_key)
         h = SHA256.new(self.transaction_id.encode())
         self.signature = base64.b64encode(signer.sign(h)).decode() #TODO: may not need base64 encoding
