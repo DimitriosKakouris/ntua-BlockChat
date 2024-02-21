@@ -8,7 +8,7 @@ from block import genesis
 
 # Assuming the removal of the direct import from the client script for IP and port settings
 # Instead, use environment variables or default values
-IP_ADDRESS = os.getenv("IP", "127.0.0.1")
+IP_ADDRESS = os.getenv("IP", "172.18.0.2")
 PORT = os.getenv("PORT", 8000)
 
 node = Node()

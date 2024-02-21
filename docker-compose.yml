@@ -3,65 +3,70 @@ services:
   node1:
     image: ntua-blockchain
     environment:
-      - TERM=xterm
       - PORT=8000
       - IP=172.18.0.2
     ports:
       - "8000:8000"
+    tty: true
+    stdin_open: true
     networks:
-     blockchat:
+      blockchat:
         ipv4_address: 172.18.0.2
 
   node2:
     image: ntua-blockchain
     environment:
-      - TERM=xterm
       - PORT=8001
       - IP=172.18.0.3
     ports:
       - "8001:8000"
+    tty: true
+    stdin_open: true
     networks:
-     blockchat:
+      blockchat:
         ipv4_address: 172.18.0.3
 
   node3:
     image: ntua-blockchain
     environment:
-      - TERM=xterm
       - PORT=8002
       - IP=172.18.0.4
     ports:
       - "8002:8000"
+    tty: true
+    stdin_open: true
     networks:
-     blockchat:
+      blockchat:
         ipv4_address: 172.18.0.4
 
   node4:
     image: ntua-blockchain
     environment:
-      - TERM=xterm
       - PORT=8003
       - IP=172.18.0.5
     ports:
       - "8003:8000"
+    tty: true
+    stdin_open: true
     networks:
-     blockchat:
+      blockchat:
         ipv4_address: 172.18.0.5
 
   node5:
     image: ntua-blockchain
     environment:
-      - TERM=xterm
       - PORT=8004
       - IP=172.18.0.6
     ports:
       - "8004:8000"
+    tty: true
+    stdin_open: true
     networks:
-     blockchat:
+      blockchat:
         ipv4_address: 172.18.0.6
 
 networks:
- blockchat:
+  blockchat:
     driver: bridge
     ipam:
       config:

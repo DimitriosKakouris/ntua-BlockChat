@@ -27,18 +27,14 @@ Implement the following functions:
 
 ```  docker build -t ntua-blockchain . ```
 
-2. Create network:
+2. Create the containers, this will create a network for them with subnet 172.18.0.0/16:
 
-``` docker network create --subnet=172.18.0.0/16 ntua-blockchain_blockchat ```
+``` docker compose up ```
 
-3. Run each docker container with this command:
+3. To enter a node (client), for example first node:
 
-For bootstrap node:
+``` docker-compose exec node1 bash entrypoint.sh ```
 
-```docker run -it -e PORT=8000 -e IP=172.18.0.2 -p 8000:8000 --network ntua-blockchain_blockchat --rm ntua-blockchain```
+4. To close the service and down the containers:
 
-4. Run each client docker container with this command:
-
-For other nodes:
-
-```docker run -it -e PORT=800x -e IP=172.18.0.y -p 800x:8000 --network ntua-blockchain_blockchat --rm ntua-blockchain```
+``` docker compose down ```

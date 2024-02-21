@@ -42,5 +42,7 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
 EXPOSE $PORT
 
+# EXPOSE $IP
+
 # Use the shell script as the entry point
-ENTRYPOINT ["/app/entrypoint.sh"]
+# ENTRYPOINT ["/app/entrypoint.sh"]
