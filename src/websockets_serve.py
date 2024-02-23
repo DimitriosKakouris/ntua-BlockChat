@@ -4,7 +4,9 @@ import json
 import websockets
 from dotenv import load_dotenv
 from nodes import Node
-from block import genesis
+from block import Block
+from transaction import Transaction
+
 
 # Assuming the removal of the direct import from the client script for IP and port settings
 # Instead, use environment variables or default values
@@ -15,7 +17,7 @@ node = Node()
 
 # Load environment variables and set up node details
 load_dotenv()
-total_nodes = int(os.getenv('TOTAL_NODES', 5))
+total_nodes = int(os.getenv('TOTAL_NODES', 3))
 total_bcc = total_nodes * 1000
 
 bootstrap_node = {
@@ -44,32 +46,33 @@ async def register_node():
     if node.id == 0:
         # Add himself to ring
         node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key)
-        node.chain.add_block(genesis(node.wallet.public_key, total_nodes))
+
+        print("Registered Bootstrap node to ring")
+        transaction = Transaction(
+            sender_address='0',
+            #sender_id=self.id,
+            receiver_address=node.wallet.public_key,
+            #receiver_id=receiver_id,
+            type_of_transaction='coin',
+            amount=total_bcc,
+            nonce=1,
+            message=None
+        )
+        
+        node.transaction_pool.append(transaction)
+        node.wallet.balance += total_bcc
+
+        print("Genesis transaction added to transaction pool")
+        genesis_block = Block(0, 1)
+        genesis_block.validator = 0
+        genesis_block.previous_hash = '1'
+        genesis_block.transactions.append(transaction)
+
+        node.chain.add_block(genesis_block)
+        print("Genesis block added to chain")
 
     else: 
-        print("Just before unicasting to the bootstrap node")
-        ws_url = f"ws://{bootstrap_node['ip']}:{bootstrap_node['port']}"
-        node_info = {
-                    'action': 'register_node',
-                    'data': {
-                        'ip': node.ip,
-                        'port': node.port,
-                        'public_key': node.wallet.public_key
-                    }
-                }
-        print("I have unicasted to the bootstrap node")
-
-        async with websockets.connect(ws_url) as websocket:
-            # Send the registration information as a JSON string
-            await websocket.send(json.dumps(node_info))
-            
-            # Wait for a response from the bootstrap node
-            response = await websocket.recv()
-            response_data = json.loads(response)
-            
-            node.id = response_data['id']
-            print('My ID is:', node.id)
-
+        await node.unicast_node(bootstrap_node)
         # await node.share_ring(bootstrap_node)
             
 
@@ -124,35 +127,72 @@ async def handler(websocket, path):
         
 
         if data['action'] == 'register_node':
-            new_node_data = data.get('data')
+            # Create an Event
+            # Create a Condition
+            node_joined_condition = asyncio.Condition()
+            # node_joined_event = asyncio.Event()
 
-            # Store the new node's data
-            connected_nodes.append(new_node_data)
+            # # In the 'register_node' action handler
+            # new_node_data = data.get('data')
+            # connected_nodes.append(new_node_data)
+            # print(new_node_data)
+            # # Set the Event to indicate that a node has joined
+            # node_joined_event.set()
 
-            # If there are 4 nodes connected, broadcast the chain and the ring
-            if len(connected_nodes) == 1:
-                print("1 nodes have joined the network")
+            # # In the part of your code that needs to wait for a node to join
+            # await node_joined_event.wait()
 
-                # Register the nodes to the ring
-                for i, node_data in enumerate(connected_nodes):
-                    bootstrap_node.register_node_to_ring(i+1, node_data['ip'], node_data['port'], node_data['public_key'])
+          
 
-                print("Ring:", bootstrap_node.ring)
-                # Share the chain and the ring
-                for ring_node in bootstrap_node.ring:
-                    if ring_node["id"] != 0:
-                        await bootstrap_node.share_chain(ring_node)
-                        await bootstrap_node.share_ring(ring_node)
-                        print("Sending coins to node", ring_node['id'])
-                        await node.create_transaction(ring_node['public_key'],'coin' ,1000)
+            # In the 'register_node' action handler
+            async with node_joined_condition:
+                new_node_data = data.get('data')
+                connected_nodes.append(new_node_data)
 
-                # Reset the connected nodes
-                connected_nodes = []
+                # If 4 nodes have joined, notify all tasks waiting on the Condition
+                if len(connected_nodes) >= 2:
+                    node_joined_condition.notify_all()
 
-            # Send back the node ID
-            node_id = len(bootstrap_node.ring) - 1
-            await websocket.send(json.dumps({'id': node_id}))
+            # In the part of your code that needs to wait for 4 nodes to join
+            async with node_joined_condition:
+                while len(connected_nodes) < 2:
+                    await node_joined_condition.wait()
 
+
+            print("1 nodes have joined the network")
+
+            # Register the nodes to the ring
+            for i, node_data in enumerate(connected_nodes):
+                bootstrap_node.register_node_to_ring(i+1, node_data['ip'], node_data['port'], node_data['public_key'])
+                print("Before assign: ",node.id)
+                node.id = i + 1 if node.id == None else 0
+               
+
+            print("Ring:", bootstrap_node.ring)
+            # Share the chain and the ring
+            for ring_node in bootstrap_node.ring:
+                if ring_node['id'] != 0:
+                    print("ring_node:", ring_node['id'])
+                    await bootstrap_node.share_chain(ring_node)
+                    # In the share_ring method
+                    print(f"Sharing ring with node {ring_node['id']}")
+                    await bootstrap_node.share_ring(ring_node)
+                    print("Sending coins to node", ring_node['id'])
+                    await bootstrap_node.create_transaction(ring_node['public_key'],'coin' ,1000)
+                   
+            
+
+            # Reset the connected nodes
+            connected_nodes = []
+
+            # for i, ring_node in enumerate(bootstrap_node.ring):
+            #     if ring_node['public_key'] == wallet_address:
+            #         node.id = i + 1
+            #         break
+            
+
+            await websocket.send(json.dumps({'status' :'Entered the network','id': node.id}))
+           
 
         elif data['action'] == 'new_transaction':
             # Extract relevant data
@@ -187,13 +227,26 @@ async def handler(websocket, path):
             print("Getting balance")
             balance = get_balance()
             wallet_address = node.wallet.public_key
-            await websocket.send(json.dumps({'wallet_address':wallet_address,'balance': balance}))
+            node_id = node.id
+
+            await websocket.send(json.dumps({'Node ID':node_id,'wallet_address':wallet_address,'balance': balance}))
+
+
+        elif data['action'] == 'update_balance':
+            amount = data['data']['amount']
+            type_of_transaction = data['data']['type_of_transaction']
+
+            if type_of_transaction == 'coin':
+                node.wallet.balance += int(amount)
+
+            print(f"Node {node.id} received 'update_balance' action")
+
+            await websocket.send(json.dumps({'message': "Balance updated"}))
 
         elif data['action'] == 'update_ring':
             new_ring = data['data']
-            print("Updating ring")
             node.ring = new_ring
-            print("Ring updated")
+            print(f"Node {node.id} received 'update_ring' action")
 
             await websocket.send(json.dumps({'message': "Ring updated"}))
 

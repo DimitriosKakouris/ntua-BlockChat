@@ -1,7 +1,7 @@
 from blockchain import Blockchain
 from transaction import Transaction
 from wallet import Wallet
-from block import Block, genesis
+from block import Block
 # from websockets_serve import send_websocket_request
 # # from main import num_nodes
 
@@ -41,7 +41,7 @@ class Node:
         self.chain = Blockchain()
         self.wallet = Wallet()
         self.ring = []
-        self.id = id
+        self.id = None
         self.ip = None
         self.port = None
         self.transaction_pool = []
@@ -54,6 +54,25 @@ class Node:
         self.block_lock = Lock()
         self.capacity = 5
 
+    @classmethod
+    def from_dict(cls, data):
+        node = cls()
+        node.chain = Blockchain.from_dict(data['chain'])
+        node.wallet = Wallet.from_dict(data['wallet'])
+        node.ring = data['ring']
+        node.id = data['id']
+        node.ip = data['ip']
+        node.port = data['port']
+        node.transaction_pool = deque(data['transaction_pool'])
+        node.stake = data['stake']
+        node.current_block = Block.from_dict(data['current_block'])
+        node.block_lock = Lock()
+        node.capacity = data['capacity']
+
+        return node
+
+       
+    
     def stake(self, amount):
         """
         Updates the node's stake amount for the Proof of Stake process.
@@ -70,17 +89,17 @@ class Node:
     
     
 
-    # node.curren
-    def create_new_block(self):
-        """Creates a new block"""
+    # # node.curren
+    # def create_new_block(self):
+    #     """Creates a new block"""
         
-        if len(self.chain.blocks) == 0:
-            # Genesis block
-            self.current_block = genesis(self.wallet.public_key, num_nodes)
-        else:
-            # Filled out later
-            self.current_block = Block(None, None)
-        return self.current_block
+    #     if len(self.chain.blocks) == 0:
+    #         # Genesis block
+    #         self.current_block = genesis(self.wallet.public_key, num_nodes)
+    #     else:
+    #         # Filled out later
+    #         self.current_block = Block(None, None)
+    #     return self.current_block
 
 
     def add_block(self, block):
@@ -100,7 +119,7 @@ class Node:
                 return False
         return True
     
-    def register_node_to_ring(self, id, ip, port, public_key):
+    def register_node_to_ring(self,id, ip, port, public_key):
         self.ring.append({
             "id": id,
             "ip": ip,
@@ -109,8 +128,21 @@ class Node:
            
         })
 
+    # async def genesis_transaction(self, bootstrap_node_address, n):
+    #     """Creates the genesis transaction and block"""
+    #     genesis_block = genesis(bootstrap_node_address, n)
+
+    #     # Zero Wallet
+    #     # wallet = Wallet()
+    #     # wallet.balance = 1000*n
+    #     # wallet.public_key = 0
+        
+    #     self.chain.add_block(genesis_block)
+    #     await self.create_transaction(bootstrap_node_address, 'coin', 1000*n)
+    
     async def create_transaction(self, receiver_public_key, type_of_transaction, amount, message=None):
         """Creates a new transaction, directly adjusting account balances."""
+
 
         # Check if the account has enough balance:
         if self.wallet.balance < int(amount):
@@ -269,7 +301,7 @@ class Node:
             'data': {
                 'ip': self.ip,
                 'port': self.port,
-                # 'address': self.wallet.public_key
+                'public_key': self.wallet.public_key
             }
         }
         print("I have unicasted to the bootstrap node")
@@ -282,10 +314,9 @@ class Node:
             response = await websocket.recv()
             response_data = json.loads(response)
 
-            if response_data['status'] == 200:
-                print("Node added successfully!")
-                self.id = response_data['id']
-                print('My ID is:', self.id)
+            if response_data['status'] == 'Entered the network':
+                print("Node has been registered to the network")
+            
             else:
                 print("Initialization failed")
 
@@ -299,21 +330,37 @@ class Node:
             self.wallet.transactions.append(transaction)
             self.wallet.balance -= int(transaction.amount)
 
-        # Does not work because it is not called by receiver
-        if transaction.receiver_address == self.wallet.public_key:
-            self.wallet.transactions.append(transaction)
-            self.wallet.balance += int(transaction.amount)
+        
+        # # Does not work because it is not called by receiver
+        # if transaction.receiver_address == self.wallet.public_key:
+        #     self.wallet.transactions.append(transaction)
+        #     self.wallet.balance += int(transaction.amount)
 
         # Update the balance of the sender and the receiver
+        print("In add_transaction_block ring: ", self.ring)
+        for ring_node in self.ring:
+            print("In add_transaction_block loop", ring_node)
+            print("In add_transaction_block loop receiver address", repr(transaction.receiver_address))
+            print(repr(ring_node['public_key']))
+            if ring_node['public_key'] == str(transaction.receiver_address):
+                print(ring_node['public_key'])
+                receiver_ip = ring_node['ip']
+                receiver_port = ring_node['port']
+                print(receiver_ip, receiver_port)
+        
+    
+        data={'amount':transaction.amount,'type_of_transaction':transaction.type_of_transaction}
+        await send_websocket_request('update_balance',data,receiver_ip, receiver_port)
         # for ring_node in self.ring:
-        #     if ring_node['public_key'] == transaction.sender_address:
-        #         ring_node.wallet.balance -= int(transaction.amount)
+        #     print("In add_transaction_block", ring_node)
         #     if ring_node['public_key'] == transaction.receiver_address:
-        #         ring_node.wallet.balance += int(transaction.amount)
+        #         print("receiver got the money")
+                
+        #         Node.from_dict(ring_node).wallet.balance += int(transaction.amount)
 
         # If chain has only the genesis block, create new block
         if self.chain.size() == 1:
-            self.current_block = self.create_new_block()
+            self.current_block = Block(None, None)
 
         self.block_lock.acquire()
         if self.current_block.add_transaction(transaction, self.capacity):

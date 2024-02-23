@@ -39,31 +39,31 @@ services:
       blockchat:
         ipv4_address: 172.18.0.4
 
-  node4:
-    image: ntua-blockchain
-    environment:
-      - PORT=8003
-      - IP=172.18.0.5
-    ports:
-      - "8003:8000"
-    tty: true
-    stdin_open: true
-    networks:
-      blockchat:
-        ipv4_address: 172.18.0.5
+  # node4:
+  #   image: ntua-blockchain
+  #   environment:
+  #     - PORT=8003
+  #     - IP=172.18.0.5
+  #   ports:
+  #     - "8003:8000"
+  #   tty: true
+  #   stdin_open: true
+  #   networks:
+  #     blockchat:
+  #       ipv4_address: 172.18.0.5
 
-  node5:
-    image: ntua-blockchain
-    environment:
-      - PORT=8004
-      - IP=172.18.0.6
-    ports:
-      - "8004:8000"
-    tty: true
-    stdin_open: true
-    networks:
-      blockchat:
-        ipv4_address: 172.18.0.6
+  # node5:
+  #   image: ntua-blockchain
+  #   environment:
+  #     - PORT=8004
+  #     - IP=172.18.0.6
+  #   ports:
+  #     - "8004:8000"
+  #   tty: true
+  #   stdin_open: true
+  #   networks:
+  #     blockchat:
+  #       ipv4_address: 172.18.0.6
 
 networks:
   blockchat:

@@ -3,6 +3,7 @@ import json
 from Crypto.Hash import SHA256
 from transaction import Transaction
 
+
 class Block:
     def __init__(self, index, previous_hash):
         self.index = index
@@ -57,14 +58,17 @@ class Block:
         return block
 
     
-def genesis(bootstrap_node_address, n):
-    genesis_block = Block(0, 1)
-    genesis_block.validator = 0
-    genesis_transaction = Transaction(
-        sender_address='0', 
-        receiver_address=bootstrap_node_address, 
-        type_of_transaction='coin', 
-        amount=1000*n, 
-        nonce=0) 
-    genesis_block.transactions.append(genesis_transaction)
-    return genesis_block
+# async def genesis(bootstrap_node_address, n):
+#     genesis_block = Block(0, 1)
+#     genesis_block.validator = 0
+#     genesis_transaction = Transaction(
+#         sender_address='0', 
+#         receiver_address=bootstrap_node_address, 
+#         type_of_transaction='coin', 
+#         amount=1000*n, 
+#         nonce=0) 
+    
+
+    
+#     genesis_block.transactions.append(genesis_transaction)
+#     return genesis_block

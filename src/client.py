@@ -49,6 +49,7 @@ async def client():
              # Read the receiver ID from the text file
             with open(answers['receiver'], 'r') as file:
                 receiver = file.read().strip()
+                receiver = receiver.replace('\\n', '\n')
 
              # Send transaction request
             transaction_data = {'receiver': receiver, 'amount': answers['amount']}
@@ -62,9 +63,16 @@ async def client():
             ]
             answers = inquirer.prompt(questions)
             # Send message request
-            print(answers)
-            response = await send_websocket_request('new_message', answers, ip_address, port)
+            with open(answers['receiver'], 'r') as file:
+                receiver = file.read().strip()
+                receiver = receiver.replace('\\n', '\n')
+
+             # Send transaction request
+            transaction_data = {'receiver': receiver, 'message': answers['message']}
+            response = await send_websocket_request('new_message', transaction_data, ip_address, port)
             print(response)
+            # response = await send_websocket_request('new_message', answers, ip_address, port)
+          
             
         elif choice == 'View last transactions':
             # Assuming you have a specific message format for this request
