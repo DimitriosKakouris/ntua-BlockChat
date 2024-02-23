@@ -320,6 +320,10 @@ class Node:
             else:
                 print("Initialization failed")
 
+    async def get_id(self):
+        response =await send_websocket_request('get_id', {}, self.ip, self.port)
+        print("Response from get_id", response)
+
     
     async def add_transaction_to_block(self, transaction):
         """Adds a transaction to a block, check if minting is needed and update

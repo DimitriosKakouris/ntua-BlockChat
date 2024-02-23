@@ -73,6 +73,7 @@ async def register_node():
 
     else: 
         await node.unicast_node(bootstrap_node)
+        await node.get_id() 
         # await node.share_ring(bootstrap_node)
             
 
@@ -164,8 +165,8 @@ async def handler(websocket, path):
             # Register the nodes to the ring
             for i, node_data in enumerate(connected_nodes):
                 bootstrap_node.register_node_to_ring(i+1, node_data['ip'], node_data['port'], node_data['public_key'])
-                print("Before assign: ",node.id)
-                node.id = i + 1 if node.id == None else 0
+                
+               
                
 
             print("Ring:", bootstrap_node.ring)
@@ -182,14 +183,10 @@ async def handler(websocket, path):
                    
             
 
+
             # Reset the connected nodes
             connected_nodes = []
 
-            # for i, ring_node in enumerate(bootstrap_node.ring):
-            #     if ring_node['public_key'] == wallet_address:
-            #         node.id = i + 1
-            #         break
-            
 
             await websocket.send(json.dumps({'status' :'Entered the network','id': node.id}))
            
@@ -204,6 +201,15 @@ async def handler(websocket, path):
             print(response)
             # Send back a JSON response
             await websocket.send(json.dumps({'response': response}))
+
+        elif data['action'] == 'get_id':
+           
+          
+            for i, ring_node in enumerate(node.ring):
+                if ring_node['ip'] == node.ip and ring_node['port'] == node.port:
+                    node.id = ring_node['id']
+                    break
+            await websocket.send(json.dumps({'ID received': node.id}))
 
         elif data['action'] == 'new_message':
             # Extract relevant data
@@ -285,6 +291,7 @@ async def main():
         print(f"Server started at ws://{IP_ADDRESS}:{PORT}")
         # Register the node with the bootstrap node
         await register_node()
+        # await node.get_id()
         await asyncio.Future()  # This will keep the server running indefinitely
 
 # Run the server
