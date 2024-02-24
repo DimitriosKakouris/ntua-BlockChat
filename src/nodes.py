@@ -2,9 +2,6 @@ from blockchain import Blockchain
 from transaction import Transaction
 from wallet import Wallet
 from block import Block
-# from websockets_serve import send_websocket_request
-# # from main import num_nodes
-
 import websockets
 import asyncio
 import pickle
@@ -13,7 +10,6 @@ from threading import Lock
 from collections import deque
 
 
-num_nodes = 4
 
 async def send_websocket_request(action, data,ip, port):
         # Define the WebSocket URL
@@ -52,7 +48,7 @@ class Node:
                 self.current_block = None  # Or create a new genesis block # Check if it is the correct way to handle current
 
         self.block_lock = Lock()
-        self.capacity = 5
+        # self.capacity = 5
 
     @classmethod
     def from_dict(cls, data):
@@ -78,7 +74,7 @@ class Node:
         Updates the node's stake amount for the Proof of Stake process.
         The node can increase or decrease its stake, within the limits of its available balance.
         """
-        stake_trasaction = self.create_transaction('0', "coin", amount)
+        stake_trasaction = self.create_transaction(self.wallet.public_key, "coin", amount)
 
         if not stake_trasaction["success"]:
             return False
@@ -87,20 +83,6 @@ class Node:
             self.stake = amount
             return True
     
-    
-
-    # # node.curren
-    # def create_new_block(self):
-    #     """Creates a new block"""
-        
-    #     if len(self.chain.blocks) == 0:
-    #         # Genesis block
-    #         self.current_block = genesis(self.wallet.public_key, num_nodes)
-    #     else:
-    #         # Filled out later
-    #         self.current_block = Block(None, None)
-    #     return self.current_block
-
 
     def add_block(self, block):
         self.chain.add_block(block)
@@ -128,17 +110,6 @@ class Node:
            
         })
 
-    # async def genesis_transaction(self, bootstrap_node_address, n):
-    #     """Creates the genesis transaction and block"""
-    #     genesis_block = genesis(bootstrap_node_address, n)
-
-    #     # Zero Wallet
-    #     # wallet = Wallet()
-    #     # wallet.balance = 1000*n
-    #     # wallet.public_key = 0
-        
-    #     self.chain.add_block(genesis_block)
-    #     await self.create_transaction(bootstrap_node_address, 'coin', 1000*n)
     
     async def create_transaction(self, receiver_public_key, type_of_transaction, amount, message=None):
         """Creates a new transaction, directly adjusting account balances."""
@@ -175,12 +146,6 @@ class Node:
             # If broadcasting fails, no need to revert anything in the account model
             return {"minting_time": minting_time, "success": False}
 
-        # Deduct the amount from the sender's balance: this is done in add_transaction_to_block()
-        # self.wallet.balance -= amount
-
-        # In a real application, the receiver's balance would be updated when the transaction is confirmed,
-        # not here. This line is for illustration only.
-        # receiver_account.balance += amount
         self.wallet.nonce += 1
         return {"minting_time": minting_time, "success": True}
     
@@ -195,18 +160,7 @@ class Node:
 
         await send_websocket_request('update_ring', self.ring, node['ip'], node['port'])
 
-        # # Construct WebSocket URL for the target node
-        # ws_url = f"ws://{node['ip']}:{node['port']}"
-        
-        # # Establish a WebSocket connection and send the ring data
-        # async with websockets.connect(ws_url) as websocket:
-        #     # Serialize the ring data with pickle
-        #     serialized_ring = json.dumps(self.ring)
-        #     # Send serialized data through WebSocket
-        #     await websocket.send(serialized_ring)
-        #     # Optionally, wait for an acknowledgment or response
-        #     response = await websocket.recv()
-        #     print("Response from node:", response)
+     
 
     async def share_chain(self, ring_node):
         """
@@ -216,17 +170,7 @@ class Node:
         """
 
         response = await send_websocket_request('update_chain', self.chain.to_dict(), ring_node['ip'], ring_node['port'])
-        # """Shares your blockchain to a specified node using WebSockets."""
-        # ws_url = f"ws://{ring_node['ip']}:{ring_node['port']}"
-
-        # async with websockets.connect(ws_url) as websocket:
-        #     # Serialize the blockchain data
-        #     serialized_chain = json.dumps(self.chain.to_dict())
-        #     # Send the serialized blockchain data through the WebSocket
-        #     await websocket.send(serialized_chain)
-        #     # Optionally, wait for an acknowledgment or response
-        #     response = await websocket.recv()
-        #     print("Response from node:", response)
+     
         return response
     
 
@@ -316,14 +260,12 @@ class Node:
 
             if response_data['status'] == 'Entered the network':
                 print("Node has been registered to the network")
+               
             
             else:
                 print("Initialization failed")
 
-    async def get_id(self):
-        response =await send_websocket_request('get_id', {}, self.ip, self.port)
-        print("Response from get_id", response)
-
+        
     
     async def add_transaction_to_block(self, transaction):
         """Adds a transaction to a block, check if minting is needed and update
@@ -355,19 +297,13 @@ class Node:
     
         data={'amount':transaction.amount,'type_of_transaction':transaction.type_of_transaction}
         await send_websocket_request('update_balance',data,receiver_ip, receiver_port)
-        # for ring_node in self.ring:
-        #     print("In add_transaction_block", ring_node)
-        #     if ring_node['public_key'] == transaction.receiver_address:
-        #         print("receiver got the money")
-                
-        #         Node.from_dict(ring_node).wallet.balance += int(transaction.amount)
 
         # If chain has only the genesis block, create new block
         if self.chain.size() == 1:
             self.current_block = Block(None, None)
 
         self.block_lock.acquire()
-        if self.current_block.add_transaction(transaction, self.capacity):
+        if self.current_block.add_transaction(transaction):
             self.block_lock.release()  # Release lock before minting
             validator = self.chain.select_validator(self.ring)
 

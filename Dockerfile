@@ -32,6 +32,14 @@ WORKDIR /app
 COPY ./requirements.txt /app/requirements.txt
 # Copy the current directory contents into the container at /app
 COPY ./src /app
+# COPY ./frontend /app
+
+# RUN apt-get update && apt-get install -y \
+#     software-properties-common \
+#     npm
+# RUN npm install npm@latest -g && \
+#     npm install n -g && \
+#     n latest
 
 
 # Make the shell script executable

@@ -12,11 +12,12 @@ class Block:
         self.transactions = []
         self.current_hash = self.hash_block()
         self.validator = None
+        self.capacity = 2
 
 
-    def add_transaction(self, transaction, capacity):
+    def add_transaction(self, transaction):
         self.transactions.append(transaction)
-        if len(self.transactions) >= capacity:
+        if len(self.transactions) >= self.capacity:
             return True # Block is full
         return False
     

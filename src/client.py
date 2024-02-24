@@ -6,18 +6,11 @@ import json
 import asyncio
 import websockets
 from websockets_serve import send_websocket_request
-
 from texttable import Texttable
 
-################## ARGUMENTS #####################
-argParser = argparse.ArgumentParser()
-argParser.add_argument("-p", "--port", help="Port in which node is running", default=8000, type=int)
-argParser.add_argument("--ip", help="IP of the host")
-args = argParser.parse_args()
-# Address of node
-ip_address = args.ip
-port = args.port
 
+ip_address = os.getenv('IP')
+port = os.getenv('PORT')
 
 # address = 'ws://' + str(ip_address) + ':' + str(port)
 address = f'ws://{ip_address}:{port}'
@@ -34,7 +27,7 @@ async def client():
         menu = [ 
             inquirer.List('menu', 
             message= "BlockChat Client", 
-            choices= ['New Transaction', 'New Message', 'View last transactions', 'Show balance', 'Help', 'Exit'], 
+            choices= ['New Transaction', 'New Message','Add Stake', 'View last transactions', 'Show balance', 'Help', 'Exit'], 
             ),
         ]
         choice = inquirer.prompt(menu)['menu']
@@ -47,10 +40,11 @@ async def client():
             ]
             answers = inquirer.prompt(questions)
              # Read the receiver ID from the text file
-            with open(answers['receiver'], 'r') as file:
-                receiver = file.read().strip()
-                receiver = receiver.replace('\\n', '\n')
+            # with open(answers['receiver'], 'r') as file:
+            #     receiver = file.read().strip()
+            #     receiver = receiver.replace('\\n', '\n')
 
+            receiver = answers['receiver']
              # Send transaction request
             transaction_data = {'receiver': receiver, 'amount': answers['amount']}
             response = await send_websocket_request('new_transaction', transaction_data, ip_address, port)
@@ -63,16 +57,25 @@ async def client():
             ]
             answers = inquirer.prompt(questions)
             # Send message request
-            with open(answers['receiver'], 'r') as file:
-                receiver = file.read().strip()
-                receiver = receiver.replace('\\n', '\n')
+            # with open(answers['receiver'], 'r') as file:
+            #     receiver = file.read().strip()
+            #     receiver = receiver.replace('\\n', '\n'
 
+            receiver = answers['receiver']
              # Send transaction request
             transaction_data = {'receiver': receiver, 'message': answers['message']}
             response = await send_websocket_request('new_message', transaction_data, ip_address, port)
             print(response)
             # response = await send_websocket_request('new_message', answers, ip_address, port)
           
+        elif choice == 'Add Stake':
+            questions = [
+                inquirer.Text(name='amount', message='How many BlockChat Coins to stake?'),
+            ]
+            answers = inquirer.prompt(questions)
+            # Send stake request
+            response = await send_websocket_request('stake', {'amount': answers['amount']}, ip_address, port)
+            print(response)
             
         elif choice == 'View last transactions':
             # Assuming you have a specific message format for this request
