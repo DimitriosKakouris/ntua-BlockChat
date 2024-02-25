@@ -16,8 +16,12 @@ class Block:
 
 
     def add_transaction(self, transaction):
+        print(f"Adding transaction to block {transaction.to_dict()}")
+        print(f"Current transactions array is {self.transactions}")
         self.transactions.append(transaction)
+        print(f"Transaction added to block and curr length is {len(self.transactions)}")
         if len(self.transactions) >= self.capacity:
+            print(f"Block is full")
             return True # Block is full
         return False
     

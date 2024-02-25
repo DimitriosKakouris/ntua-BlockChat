@@ -271,38 +271,40 @@ class Node:
         """Adds a transaction to a block, check if minting is needed and update
         the wallet and balances of participating nodes"""
 
-        # Add transaction to the wallet of the sender and the receiver
-        if transaction.sender_address  == self.wallet.public_key:
-            self.wallet.transactions.append(transaction)
-            self.wallet.balance -= int(transaction.amount)
+        # # Add transaction to the wallet of the sender and the receiver
+        # if transaction.sender_address  == self.wallet.public_key:
+        #     self.wallet.transactions.append(transaction)
+        #     self.wallet.balance -= int(transaction.amount)
 
         
-        # # Does not work because it is not called by receiver
-        # if transaction.receiver_address == self.wallet.public_key:
-        #     self.wallet.transactions.append(transaction)
-        #     self.wallet.balance += int(transaction.amount)
+        # # # Does not work because it is not called by receiver
+        # # if transaction.receiver_address == self.wallet.public_key:
+        # #     self.wallet.transactions.append(transaction)
+        # #     self.wallet.balance += int(transaction.amount)
 
-        # Update the balance of the sender and the receiver
-        print("In add_transaction_block ring: ", self.ring)
-        for ring_node in self.ring:
-            print("In add_transaction_block loop", ring_node)
-            print("In add_transaction_block loop receiver address", repr(transaction.receiver_address))
-            print(repr(ring_node['public_key']))
-            if ring_node['public_key'] == str(transaction.receiver_address):
-                print(ring_node['public_key'])
-                receiver_ip = ring_node['ip']
-                receiver_port = ring_node['port']
-                print(receiver_ip, receiver_port)
+        # # Update the balance of the sender and the receiver
+        # print("In add_transaction_block ring: ", self.ring)
+        # for ring_node in self.ring:
+        #     print("In add_transaction_block loop", ring_node)
+        #     print("In add_transaction_block loop receiver address", repr(transaction.receiver_address))
+        #     print(repr(ring_node['public_key']))
+        #     if ring_node['public_key'] == str(transaction.receiver_address):
+        #         print(ring_node['public_key'])
+        #         receiver_ip = ring_node['ip']
+        #         receiver_port = ring_node['port']
+        #         print(receiver_ip, receiver_port)
         
     
-        data={'amount':transaction.amount,'type_of_transaction':transaction.type_of_transaction}
-        await send_websocket_request('update_balance',data,receiver_ip, receiver_port)
+        # data={'amount':transaction.amount,'type_of_transaction':transaction.type_of_transaction}
+        # await send_websocket_request('update_balance',data,receiver_ip, receiver_port)
 
         # If chain has only the genesis block, create new block
         if self.chain.size() == 1:
             self.current_block = Block(None, None)
+            self.chain.add_block(self.current_block)
 
         self.block_lock.acquire()
+        print("Block lock acquired")
         if self.current_block.add_transaction(transaction):
             self.block_lock.release()  # Release lock before minting
             validator = self.chain.select_validator(self.ring)
@@ -310,6 +312,11 @@ class Node:
             if validator == self.wallet.public_key:
             # Mint the block if this node is the validator
                 minting_time = self.chain.mint_block(self.current_block, self.capacity)
+                for ring_node in self.ring:
+                    await send_websocket_request('update_chain', self.chain.to_dict(), ring_node['ip'], ring_node['port'])
+                    await send_websocket_request('update_balance', {}, ring_node['ip'], ring_node['port'])
+            
+
                 # Assume mint_block finalizes and broadcasts the block, returning the time it took
                 self.current_block = None  # Reset current block after minting
                 return minting_time

@@ -219,11 +219,22 @@ async def handler(websocket):
 
 
         elif data['action'] == 'update_balance':
-            amount = data['data']['amount']
-            type_of_transaction = data['data']['type_of_transaction']
+            for trans in node.transaction_pool:
+                if any(trans['transcaction_id'] in d.to_dict()['transaction_id'] for d in node.chain.blocks[-1].transactions):
+                    
+                    if trans.to_dict()['sender_address'] == node.wallet.public_key:
+                        node.wallet.balance -= trans.to_dict()['amount']
+                    
+                    if trans.to_dict()['receiver_address'] == node.wallet.public_key:
+                        node.wallet.balance += trans.to_dict()['amount']
 
-            if type_of_transaction == 'coin':
-                node.wallet.balance += int(amount)
+                    node.transaction_pool.remove(trans)
+            
+            # amount = data['data']['amount']
+            # type_of_transaction = data['data']['type_of_transaction']
+
+            # if type_of_transaction == 'coin':
+            #     node.wallet.balance += int(amount)
 
             print(f"Node {node.id} received 'update_balance' action")
 
