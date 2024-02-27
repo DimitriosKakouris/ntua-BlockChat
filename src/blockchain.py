@@ -1,7 +1,11 @@
 from block import Block
 import random
+import json
+import websockets
 from datetime import datetime
 import time
+
+
 
 class Blockchain:
     def __init__(self):
@@ -27,54 +31,61 @@ class Blockchain:
     def size(self):
         return len(self.blocks)
 
-    def mint_block(self, node, capacity):
-        if len(self.current_transactions) >= capacity: 
-            # Implementing the proof of stake
-
-            # Use the hash of the previous block as the seed for the pseudorandom number generator
-            if self.blocks:  # Ensure there is at least one block in the chain
-                previous_block = self.blocks[-1]
-                # Assuming each block has a 'current_hash' attribute
-                seed = int(previous_block.current_hash, 16)  # Convert hex hash to an integer
-            else:
-                # Fallback seed for the very first block (genesis block)
-                seed = 1
-            random.seed(seed)
-            validator = self.select_validator(node.ring)
-
-            start_time = time.time()
-            
-            if validator.id == node.id:  # Assuming you have a way to identify the current node
-                previous_hash = self.blocks[-1].current_hash if self.blocks else '1'
-                new_block = Block(
-                    transactions=node.unconfirmed_transactions,
-                    previous_hash=previous_hash,
-                    validator_address=validator
-                )
-                self.add_block(new_block)
-                # Calculate minting time
-                minting_time = time.time() - start_time
-                return minting_time
-            else:
-                return 0
-        else:
-            return 0
-
-    def select_validator(nodes):
-        """
-        Selects a validator node based on the stake of each node.
-        The higher the stake, the higher the chance of being selected as a validator.
+    async def mint_block(self, node):
         
-        :param nodes: A list of Node objects, where each node has an 'id' and 'stake'.
-        :return: The selected Node object as the validator.
-        """
-        total_stake = sum(node.stake for node in nodes)
-        selection_point = random.uniform(0, total_stake)
-        current = 0
-        for node in nodes:
-            current += node.stake
-            if current >= selection_point:
-                return node
+        # Implementing the proof of stake
+        previous_block = self.blocks[-1]
 
-        # Fallback, should not reach here if implemented correctly
-        raise Exception("Failed to select a validator. Check the implementation.")
+        # Assuming each block has a 'current_hash' attribute
+        seed = int(previous_block.current_hash, 16)  # Convert hex hash to an integer
+        
+        random.seed(seed)
+       
+        start_time = time.time()
+
+        current_block = node.current_block
+        
+        current_block.validator = node.wallet.public_key
+      
+        print(f'Current chain is {self.to_dict()}')
+        print(f'Previous block is {self.blocks[-1]}')
+
+        # new_block = Block(
+        #     index=self.blocks[-1].index + 1 ,
+        #     previous_hash=self.blocks[-1].current_hash,
+        # )
+       
+
+       
+        
+        # Calculate minting time
+        minting_time = time.time() - start_time
+
+        await node.broadcast_block(current_block)
+
+     
+        return minting_time
+    
+
+
+async def send_websocket_request(action, data,ip, port):
+        # Define the WebSocket URL
+        ws_url = f"ws://{ip}:{port}"
+
+        # Define the request
+        request = {
+            'action': action,
+            'data': data
+        }
+
+        print(f"Sending request to {ws_url}: {request}")
+        # Connect to the WebSocket server and send the request
+        async with websockets.connect(ws_url) as websocket:
+            await websocket.send(json.dumps(request))
+
+            # Wait for a response from the server
+            response = await websocket.recv()
+
+        # Return the response
+        return json.loads(response)
+              

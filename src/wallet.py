@@ -7,7 +7,7 @@ class Wallet:
         self.public_key = key.publickey().export_key().decode()
         self.transactions = []
         self.nonce = 0
-        self.balance = 1000
+        self.balance = 0
         
     def get_balance(self):
         return self.balance

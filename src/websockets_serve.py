@@ -64,13 +64,19 @@ async def register_node():
         node.wallet.balance += total_bcc
 
         print("Genesis transaction added to transaction pool")
-        genesis_block = Block(0, 1)
+        genesis_block = Block(1,'1')
+      
         genesis_block.validator = 0
-        genesis_block.previous_hash = '1'
         genesis_block.transactions.append(transaction)
 
         node.chain.add_block(genesis_block)
+
+        
+
+
         print("Genesis block added to chain")
+
+
 
     else: 
         await node.unicast_node(bootstrap_node)
@@ -160,7 +166,12 @@ async def handler(websocket):
                     # In the share_ring method
                     print(f"Sharing ring with node {ring_node['id']}")
                     await bootstrap_node.share_ring(ring_node)
+                  
+
+            for ring_node in bootstrap_node.ring:
+                if ring_node['id'] != 0:
                     print("Sending coins to node", ring_node['id'])
+
                     await bootstrap_node.create_transaction(ring_node['public_key'],'coin' ,1000)
                    
 
@@ -215,30 +226,29 @@ async def handler(websocket):
             wallet_address = node.wallet.public_key
             node_id = node.id
 
-            await websocket.send(json.dumps({'Node ID':node_id,'ring':node.ring,'wallet_address':wallet_address,'balance': balance}))
+            await websocket.send(json.dumps({'Node ID':node_id,'chain':node.chain.to_dict(),'wallet_address':wallet_address,'balance': balance}))
 
 
         elif data['action'] == 'update_balance':
             for trans in node.transaction_pool:
-                if any(trans['transcaction_id'] in d.to_dict()['transaction_id'] for d in node.chain.blocks[-1].transactions):
-                    
-                    if trans.to_dict()['sender_address'] == node.wallet.public_key:
+                # print(f'trans: {trans}')
+                # print(f'from node.chain.blocks[-1] the first {node.chain.blocks[-1].transactions}')
+                # print(f'Nodes chain{node.chain.to_dict()}')
+                if any(trans.transaction_id == transaction.transaction_id for transaction in node.chain.blocks[-1].transactions):
+                    print("Found transaction in block")
+                    if trans.sender_address == node.wallet.public_key:
                         node.wallet.balance -= trans.to_dict()['amount']
                     
-                    if trans.to_dict()['receiver_address'] == node.wallet.public_key:
+                    if trans.receiver_address == node.wallet.public_key:
                         node.wallet.balance += trans.to_dict()['amount']
 
                     node.transaction_pool.remove(trans)
-            
-            # amount = data['data']['amount']
-            # type_of_transaction = data['data']['type_of_transaction']
-
-            # if type_of_transaction == 'coin':
-            #     node.wallet.balance += int(amount)
-
+        
             print(f"Node {node.id} received 'update_balance' action")
 
             await websocket.send(json.dumps({'message': "Balance updated"}))
+
+
 
         elif data['action'] == 'update_ring':
             new_ring = data['data']
@@ -268,12 +278,40 @@ async def handler(websocket):
 
             await websocket.send(json.dumps({'message': f"Stake updated to: {node.stake}"}))
 
+        elif data['action'] == 'get_stake':
+            await websocket.send(json.dumps({'stake': node.stake}))
 
-        elif data['action'] == 'update_transaction_pool':
-            new_transaction = data['data']
-            node.transaction_pool.append(new_transaction)
+        elif data['action'] == 'selected_as_validator':
+            minting_time = await node.chain.mint_block(node)
+            await websocket.send(json.dumps({'minting_time': minting_time}))
 
-            await websocket.send(json.dumps({'status':'OK','message': "Transaction pool updated"}))
+     
+        
+        elif data['action'] == 'update_block':
+            transaction = data['data']
+            
+            if transaction['recipient_address'] == node.wallet.public_key:
+                transaction_recv = Transaction.from_dict(transaction)
+                node.transaction_pool.append(transaction_recv)
+
+            elif transaction['sender_address'] == node.wallet.public_key:
+                transaction_send = Transaction.from_dict(transaction)
+                node.transaction_pool.append(transaction_send)
+
+            transaction = Transaction.from_dict(transaction)
+            res = await node.add_transaction_to_block(transaction)
+
+            if res !=  0:
+                await websocket.send(json.dumps({'message':'Minting was done','minting_time': res}))
+            else:
+                await websocket.send(json.dumps({'message':'Block is not full yet'}))
+
+        elif data['action'] == 'new_block':
+            if node.chain.blocks[-1].current_hash != data['data']['hash']:
+                node.chain.add_block(Block.from_dict(data['data']))
+            node.current_block = None   
+
+            await websocket.send(json.dumps({'status':200,'message':'Block added to chain'}))
 
 
 

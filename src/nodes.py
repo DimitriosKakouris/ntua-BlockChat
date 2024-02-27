@@ -11,27 +11,6 @@ from collections import deque
 
 
 
-async def send_websocket_request(action, data,ip, port):
-        # Define the WebSocket URL
-        ws_url = f"ws://{ip}:{port}"
-
-        # Define the request
-        request = {
-            'action': action,
-            'data': data
-        }
-
-        print(f"Sending request to {ws_url}: {request}")
-        # Connect to the WebSocket server and send the request
-        async with websockets.connect(ws_url) as websocket:
-            await websocket.send(json.dumps(request))
-
-            # Wait for a response from the server
-            response = await websocket.recv()
-
-        # Return the response
-        return json.loads(response)
-
 class Node:
     def __init__(self):
         self.chain = Blockchain()
@@ -42,13 +21,11 @@ class Node:
         self.port = None
         self.transaction_pool = []
         self.stake = 0
-        if self.chain.blocks:
-                self.current_block = self.chain.blocks[-1]
-        else:
-                self.current_block = None  # Or create a new genesis block # Check if it is the correct way to handle current
-
+        self.current_block = None
         self.block_lock = Lock()
-        # self.capacity = 5
+        self.chain_lock = Lock()
+
+
 
     @classmethod
     def from_dict(cls, data):
@@ -63,8 +40,8 @@ class Node:
         node.stake = data['stake']
         node.current_block = Block.from_dict(data['current_block'])
         node.block_lock = Lock()
-        node.capacity = data['capacity']
-
+        node.chain_lock = Lock()
+     
         return node
 
        
@@ -117,7 +94,7 @@ class Node:
 
         # Check if the account has enough balance:
         if self.wallet.balance < int(amount):
-            return {"minting_time": 0, "success": False}
+            return {"Not enough balance"}
 
         ## REMOVED BALANCE CHECK FOR TESTING PURPOSES
 
@@ -136,18 +113,15 @@ class Node:
         # Sign the transaction
         transaction.sign_transaction(self.wallet.private_key)
 
+      
+     
+       
         # Broadcast transaction
-        broadcast = await self.broadcast_transaction(transaction)
-        print("Broadcast response:", broadcast)
-        minting_time = broadcast["minting_time"]
-        success = broadcast["success"]
-
-        if not success:
-            # If broadcasting fails, no need to revert anything in the account model
-            return {"minting_time": minting_time, "success": False}
+        await self.broadcast_transaction(transaction)
+       
 
         self.wallet.nonce += 1
-        return {"minting_time": minting_time, "success": True}
+       
     
 
 
@@ -176,8 +150,9 @@ class Node:
 
     async def send_transaction(self, node, transaction):
         """Asynchronously sends a transaction to a single node via WebSocket."""
-        response = await send_websocket_request('update_transaction_pool', transaction.to_dict(), node['ip'], node['port'])
+        response = await send_websocket_request('update_block', transaction.to_dict(), node['ip'], node['port'])
         
+        # res = await self.add_transaction_to_block(transaction)
         # Return the response
         return response
 
@@ -187,7 +162,7 @@ class Node:
         responses = []
 
         for node in self.ring:
-            if node['id'] != self.id:
+            # if node['id'] != self.id:
                 task = asyncio.create_task(self.send_transaction(node, transaction))
                 tasks.append(task)
 
@@ -195,44 +170,38 @@ class Node:
             responses.append(await task)
 
         print("Responses:", responses)
-        # Check responses for validation and receipt acknowledgment
-        if not all(response.get('status') == 'OK' for response in responses):
-            return {"minting_time": 0, "success": False}
 
-        # Add transaction to block (assuming this is an async operation)
-        minting_time = await self.add_transaction_to_block(transaction)
-        return {"minting_time": minting_time, "success": True}
-    
+     
+        await send_websocket_request('update_balance', {}, self.ip, self.port)
+        # # Check responses for validation and receipt acknowledgment
+      
 
     async def send_block(self, node, block):
-        """Asynchronously sends a block to a single node via WebSocket."""
-        uri = f"ws://{node['ip']}:{node['port']}"
-        async with websockets.connect(uri) as websocket:
-            await websocket.send(pickle.dumps(block))
-            response_status = await websocket.recv()
-            return int(response_status)
-
+        res = await send_websocket_request('new_block', block.to_dict(), node['ip'], node['port'])
+        return res
+    
     async def broadcast_block(self, block):
         """Broadcasts a block to the network using WebSockets."""
         tasks = []
-        block_accepted = False
+      
 
         for node in self.ring:
-            if node['id'] != self.id:
+            # if node['id'] != self.id:
                 task = asyncio.create_task(self.send_block(node, block))
                 tasks.append(task)
 
         responses = await asyncio.gather(*tasks)
-
+        print("Responses:", responses)
         for response in responses:
-            if response == 200:
-                block_accepted = True
-                break  # Stop checking if any node accepts the block
+            if response['status'] == 200:
+               
+               print("Block accepted by the network")
+               break
 
-        if block_accepted:
-            async with self.chain_lock:
-                if self.validate_block(block):
-                    self.chain.blocks.append(block)
+        
+        for ring_node in self.ring:
+            await send_websocket_request('update_balance', {}, ring_node['ip'], ring_node['port'])
+                    
 
    
     async def unicast_node(self, bootstrap_node):
@@ -271,58 +240,50 @@ class Node:
         """Adds a transaction to a block, check if minting is needed and update
         the wallet and balances of participating nodes"""
 
-        # # Add transaction to the wallet of the sender and the receiver
-        # if transaction.sender_address  == self.wallet.public_key:
-        #     self.wallet.transactions.append(transaction)
-        #     self.wallet.balance -= int(transaction.amount)
-
-        
-        # # # Does not work because it is not called by receiver
-        # # if transaction.receiver_address == self.wallet.public_key:
-        # #     self.wallet.transactions.append(transaction)
-        # #     self.wallet.balance += int(transaction.amount)
-
-        # # Update the balance of the sender and the receiver
-        # print("In add_transaction_block ring: ", self.ring)
-        # for ring_node in self.ring:
-        #     print("In add_transaction_block loop", ring_node)
-        #     print("In add_transaction_block loop receiver address", repr(transaction.receiver_address))
-        #     print(repr(ring_node['public_key']))
-        #     if ring_node['public_key'] == str(transaction.receiver_address):
-        #         print(ring_node['public_key'])
-        #         receiver_ip = ring_node['ip']
-        #         receiver_port = ring_node['port']
-        #         print(receiver_ip, receiver_port)
-        
-    
-        # data={'amount':transaction.amount,'type_of_transaction':transaction.type_of_transaction}
-        # await send_websocket_request('update_balance',data,receiver_ip, receiver_port)
-
         # If chain has only the genesis block, create new block
-        if self.chain.size() == 1:
-            self.current_block = Block(None, None)
-            self.chain.add_block(self.current_block)
+        if self.current_block is None:
+           
+            self.current_block = Block(
+            index=self.chain.blocks[-1].index + 1 ,
+            previous_hash=self.chain.blocks[-1].current_hash,
+            )
+          
+     
+        with self.block_lock :
+            print("Block lock acquired")
 
-        self.block_lock.acquire()
-        print("Block lock acquired")
-        if self.current_block.add_transaction(transaction):
-            self.block_lock.release()  # Release lock before minting
-            validator = self.chain.select_validator(self.ring)
+            if self.current_block.add_transaction(transaction):
+                
+                validator = await self.current_block.select_validator(self.ring)
 
-            if validator == self.wallet.public_key:
-            # Mint the block if this node is the validator
-                minting_time = self.chain.mint_block(self.current_block, self.capacity)
-                for ring_node in self.ring:
-                    await send_websocket_request('update_chain', self.chain.to_dict(), ring_node['ip'], ring_node['port'])
-                    await send_websocket_request('update_balance', {}, ring_node['ip'], ring_node['port'])
-            
+                # if validator == self.wallet.public_key:
+                # Mint the block if this node is the validator
+                res = await send_websocket_request('selected_as_validator', {}, validator['ip'], validator['port'])
 
-                # Assume mint_block finalizes and broadcasts the block, returning the time it took
-                self.current_block = None  # Reset current block after minting
+                minting_time = res['minting_time'] 
+                
+
+                # The lock is automatically released here, before minting
                 return minting_time
-            else:
-                # If not the validator, wait for the new block to be received
-                return 0
-        else:
-            self.block_lock.release()
-            return 0
+
+              
+async def send_websocket_request(action, data,ip, port):
+        # Define the WebSocket URL
+        ws_url = f"ws://{ip}:{port}"
+
+        # Define the request
+        request = {
+            'action': action,
+            'data': data
+        }
+
+        print(f"Sending request to {ws_url}: {request}")
+        # Connect to the WebSocket server and send the request
+        async with websockets.connect(ws_url) as websocket:
+            await websocket.send(json.dumps(request))
+
+            # Wait for a response from the server
+            response = await websocket.recv()
+
+        # Return the response
+        return json.loads(response)

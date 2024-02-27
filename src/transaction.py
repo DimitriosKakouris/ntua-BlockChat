@@ -77,6 +77,24 @@ class Transaction:
             'signature': self.signature
         }
     
+    @classmethod
+    def from_dict(cls, transaction_dict):
+        """
+        Create a Transaction object from a dictionary.
+        """
+        transaction = cls(
+            transaction_dict['sender_address'],
+            transaction_dict['recipient_address'],
+            transaction_dict['type_of_transaction'],
+            transaction_dict['nonce'],
+            transaction_dict['amount'],
+            transaction_dict['message']
+        )
+        transaction.transaction_id = transaction_dict['transaction_id']
+        transaction.signature = transaction_dict['signature']
+        return transaction
+        
+    
     def validate_transaction(self, wallet):
         """
         Validate the transaction.
