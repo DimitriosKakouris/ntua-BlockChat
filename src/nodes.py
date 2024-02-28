@@ -23,7 +23,7 @@ class Node:
         self.current_block = None
         self.block_lock = Lock()
         self.chain_lock = Lock()
-        self.validated_hash = '1'
+       
 
 
 
@@ -36,7 +36,7 @@ class Node:
         node.id = data['id']
         node.ip = data['ip']
         node.port = data['port']
-        node.transaction_pool = deque(data['transaction_pool'])
+        node.transaction_pool = data['transaction_pool']
         node.stake = data['stake']
         node.current_block = Block.from_dict(data['current_block'])
         node.block_lock = Lock()
@@ -61,11 +61,25 @@ class Node:
             return True
     
 
-    def add_block(self, block):
-        self.chain.add_block(block)
-    
+    async def validate_transaction(self,transaction):
+        """
+        Validate the transaction.
+        """
+        if not transaction.verify_signature():
+            return False
+        
+        # Check if the sender has enough balance
+        
+        sender_ip = [ring_node['ip'] for ring_node in self.ring if ring_node['public_key'] == transaction.sender_address][0]
+        sender_port = [ring_node['port'] for ring_node in self.ring if ring_node['public_key'] == transaction.sender_address][0]
+        res = await send_websocket_request('get_balance', {}, sender_ip, sender_port)
+
+        if res['balance'] < int(transaction.amount):
+            return False
+        return True
+        
     def validate_block(self, block):
-        return (block.previous_hash == self.chain.blocks[-1].current_hash) and (block.current_hash == block.hash_block())
+        return (block.previous_hash == self.chain.blocks[-1].current_hash)
     
     def validate_chain(self, blocks):
         """Validates all the blocks of a chain"""
@@ -91,19 +105,14 @@ class Node:
     async def create_transaction(self, receiver_public_key, type_of_transaction, amount, message=None):
         """Creates a new transaction, directly adjusting account balances."""
 
-
         # Check if the account has enough balance:
         if self.wallet.balance < int(amount):
             return {"Not enough balance"}
 
-        ## REMOVED BALANCE CHECK FOR TESTING PURPOSES
-
         # Create the transaction
         transaction = Transaction(
             sender_address=self.wallet.public_key,
-            #sender_id=self.id,
             receiver_address=receiver_public_key,
-            #receiver_id=receiver_id,
             type_of_transaction=type_of_transaction,
             amount=amount,
             nonce=self.wallet.nonce,
@@ -112,10 +121,6 @@ class Node:
 
         # Sign the transaction
         transaction.sign_transaction(self.wallet.private_key)
-
-      
-     
-       
         # Broadcast transaction
         await self.broadcast_transaction(transaction)
        
@@ -152,8 +157,6 @@ class Node:
         """Asynchronously sends a transaction to a single node via WebSocket."""
         response = await send_websocket_request('update_block', transaction.to_dict(), node['ip'], node['port'])
         
-        # res = await self.add_transaction_to_block(transaction)
-        # Return the response
         return response
 
     async def broadcast_transaction(self, transaction):
@@ -162,7 +165,6 @@ class Node:
         responses = []
 
         for node in self.ring:
-            # if node['id'] != self.id:
                 task = asyncio.create_task(self.send_transaction(node, transaction))
                 tasks.append(task)
 
@@ -186,18 +188,16 @@ class Node:
       
 
         for node in self.ring:
-            # if node['id'] != self.id:
                 task = asyncio.create_task(self.send_block(node, block))
                 tasks.append(task)
 
         responses = await asyncio.gather(*tasks)
         print("Responses:", responses)
+
         for response in responses:
             if response['status'] == 200:
                
                print("Block accepted by the network")
-            
-        
                for ring_node in self.ring:
                     await send_websocket_request('update_balance', {}, ring_node['ip'], ring_node['port'])
                     
@@ -213,31 +213,20 @@ class Node:
         """
         Sends information about self to the bootstrap node using WebSockets.
         """
-        ws_url = f"ws://{bootstrap_node['ip']}:{bootstrap_node['port']}"
         node_info = {
-            'action': 'register_node',
-            'data': {
                 'ip': self.ip,
                 'port': self.port,
                 'public_key': self.wallet.public_key
-            }
         }
+        response = await send_websocket_request('register_node', node_info, bootstrap_node['ip'], bootstrap_node['port'])
         print("I have unicasted to the bootstrap node")
 
-        async with websockets.connect(ws_url) as websocket:
-            # Send the registration information as a JSON string
-            await websocket.send(json.dumps(node_info))
+        if response['status'] == 'Entered the network':
+            print("Node has been registered to the network")
             
-            # Wait for a response from the bootstrap node
-            response = await websocket.recv()
-            response_data = json.loads(response)
-
-            if response_data['status'] == 'Entered the network':
-                print("Node has been registered to the network")
-               
-            
-            else:
-                print("Initialization failed")
+        
+        else:
+            print("Initialization failed")
 
         
     
@@ -252,22 +241,17 @@ class Node:
             index=self.chain.blocks[-1].index + 1 ,
             previous_hash=self.chain.blocks[-1].current_hash,
             )
-          
-     
-        with self.block_lock :
-            print("Block lock acquired")
+        
+        if await self.validate_transaction(transaction):
 
             if self.current_block.add_transaction(transaction):
 
-                    validator = await self.current_block.select_validator(self.ring)
-
-                        
-                    res = await send_websocket_request('selected_as_validator', {'index':str(self.current_block.index)}, validator['ip'], validator['port'])
-
-                    minting_time = res['minting_time'] 
-                
-                
-                    return minting_time
+                validator = await self.current_block.select_validator(self.ring)  
+                res = await send_websocket_request('selected_as_validator', {'index':str(self.current_block.index)}, validator['ip'], validator['port'])
+                minting_time = res['minting_time'] 
+            
+            
+                return minting_time
                             
 
 

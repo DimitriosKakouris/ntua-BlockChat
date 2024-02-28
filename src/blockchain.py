@@ -33,6 +33,9 @@ class Blockchain:
 
     async def mint_block(self, node):
         
+        if node.current_block.validator != None:
+            return {'minting_time': -1}
+        
         # Implementing the proof of stake
         previous_block = self.blocks[-1]
 
@@ -44,18 +47,13 @@ class Blockchain:
         start_time = time.time()
 
         current_block = node.current_block
+
+        node.validate_block(current_block)
         
         current_block.validator = node.wallet.public_key
 
         print(f'Node {node.id} is minting a block...')
-        
-
-        # new_block = Block(
-        #     index=self.blocks[-1].index + 1 ,
-        #     previous_hash=self.blocks[-1].current_hash,
-        # )
-       
-
+    
        
         
         # Calculate minting time

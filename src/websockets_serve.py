@@ -228,22 +228,27 @@ async def handler(websocket):
 
             await websocket.send(json.dumps({'Node ID':node_id,'chain':node.chain.to_dict(),'wallet_address':wallet_address,'balance': balance}))
 
+        elif data['action'] == 'view_last_transactions':
+            last_transactions = []
+            for trans in last_transactions:
+                last_transactions.append(trans.to_dict())   
+            await websocket.send(json.dumps({'Last pending transactions': last_transactions}))
 
         elif data['action'] == 'update_balance':
-            for trans in node.transaction_pool:
-                # print(f'trans: {trans}')
-                # print(f'from node.chain.blocks[-1] the first {node.chain.blocks[-1].transactions}')
-                # print(f'Nodes chain{node.chain.to_dict()}')
+             # Create a copy of the transaction_pool for iteration
+            transaction_pool_copy = node.transaction_pool.copy()
+            for trans in transaction_pool_copy:
                 if any(trans.transaction_id == transaction.transaction_id for transaction in node.chain.blocks[-1].transactions):
-                    print("Found transaction in block")
+                   
                     if trans.sender_address == node.wallet.public_key:
                         node.wallet.balance -= int(trans.to_dict()['amount'])
                     
                     if trans.receiver_address == node.wallet.public_key:
                         node.wallet.balance += int(trans.to_dict()['amount'])
 
+                    # Remove the transaction from the original transaction_pool
                     node.transaction_pool.remove(trans)
-        
+            
             print(f"Node {node.id} received 'update_balance' action")
 
             await websocket.send(json.dumps({'message': "Balance updated"}))
@@ -282,14 +287,10 @@ async def handler(websocket):
             await websocket.send(json.dumps({'stake': node.stake}))
 
         elif data['action'] == 'selected_as_validator':
-            
-            curr_index = data['data']['index']
-            print(f'Current index: {curr_index} and last index: {node.chain.blocks[-1].index}')
-            if node.chain.blocks[-1].index != curr_index:
-               
-                minting_time = await node.chain.mint_block(node)
+    
+            minting_time = await node.chain.mint_block(node)
               
-
+            if minting_time != -1:
                 await websocket.send(json.dumps({'minting_time': minting_time}))
 
             else:
@@ -302,10 +303,12 @@ async def handler(websocket):
             
             if transaction['recipient_address'] == node.wallet.public_key:
                 transaction_recv = Transaction.from_dict(transaction)
+                print(f"Node {node.id} to receive: {transaction_recv.to_dict()['amount']}")
                 node.transaction_pool.append(transaction_recv)
 
             elif transaction['sender_address'] == node.wallet.public_key:
                 transaction_send = Transaction.from_dict(transaction)
+                print(f"Node {node.id} to give: {transaction_send.to_dict()['amount']}")
                 node.transaction_pool.append(transaction_send)
 
             transaction = Transaction.from_dict(transaction)

@@ -19,12 +19,13 @@ class Block:
 
     def add_transaction(self, transaction):
        
-        print(f"Adding transaction to block {transaction.to_dict()}")
-        print(f"Current transactions array is {self.transactions}")
+        # print(f"Adding transaction to block {transaction.to_dict()}")
+        # print(f"Current transactions array is {self.transactions}")
+        
         self.transactions.append(transaction)
-        print(f"Transaction added to block and curr length is {len(self.transactions)}")
+        # print(f"Transaction added to block and curr length is {len(self.transactions)}")
         if len(self.transactions) >= self.capacity:
-            print(f"Block is full")
+            # print(f"Block is full")
             return True # Block is full
         return False
     
@@ -101,20 +102,7 @@ class Block:
         # Fallback, should not reach here if implemented correctly
         raise Exception("Failed to select a validator. Check the implementation.")
 
-# async def genesis(bootstrap_node_address, n):
-#     genesis_block = Block(0, 1)
-#     genesis_block.validator = 0
-#     genesis_transaction = Transaction(
-#         sender_address='0', 
-#         receiver_address=bootstrap_node_address, 
-#         type_of_transaction='coin', 
-#         amount=1000*n, 
-#         nonce=0) 
-    
 
-    
-#     genesis_block.transactions.append(genesis_transaction)
-#     return genesis_block
 
 async def send_websocket_request(action, data,ip, port):
         # Define the WebSocket URL

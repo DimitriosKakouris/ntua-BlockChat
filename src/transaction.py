@@ -94,15 +94,7 @@ class Transaction:
         transaction.signature = transaction_dict['signature']
         return transaction
         
-    
-    def validate_transaction(self, wallet):
-        """
-        Validate the transaction.
-        """
-        if not self.verify_signature():
-            return False
-        senderBalance = wallet.get_balance()
-        if senderBalance < self.amount:
-            return False
-        return True
-        
+
+
+
+
