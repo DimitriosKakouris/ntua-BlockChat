@@ -1,12 +1,9 @@
 import inquirer
 import os
-import time
-import argparse
-import json
 import asyncio
 import websockets
 from websockets_serve import send_websocket_request
-from texttable import Texttable
+
 
 
 ip_address = os.getenv('IP')

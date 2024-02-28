@@ -10,7 +10,6 @@ from threading import Lock
 from collections import deque
 
 
-
 class Node:
     def __init__(self):
         self.chain = Blockchain()
@@ -24,6 +23,7 @@ class Node:
         self.current_block = None
         self.block_lock = Lock()
         self.chain_lock = Lock()
+        self.validated_hash = '1'
 
 
 
@@ -196,11 +196,16 @@ class Node:
             if response['status'] == 200:
                
                print("Block accepted by the network")
-               break
-
+            
         
-        for ring_node in self.ring:
-            await send_websocket_request('update_balance', {}, ring_node['ip'], ring_node['port'])
+               for ring_node in self.ring:
+                    await send_websocket_request('update_balance', {}, ring_node['ip'], ring_node['port'])
+                    
+               break
+            
+            else:
+                print("Block rejected by the network")
+                break
                     
 
    
@@ -253,19 +258,20 @@ class Node:
             print("Block lock acquired")
 
             if self.current_block.add_transaction(transaction):
+
+                    validator = await self.current_block.select_validator(self.ring)
+
+                        
+                    res = await send_websocket_request('selected_as_validator', {'index':str(self.current_block.index)}, validator['ip'], validator['port'])
+
+                    minting_time = res['minting_time'] 
                 
-                validator = await self.current_block.select_validator(self.ring)
-
-                # if validator == self.wallet.public_key:
-                # Mint the block if this node is the validator
-                res = await send_websocket_request('selected_as_validator', {}, validator['ip'], validator['port'])
-
-                minting_time = res['minting_time'] 
                 
+                    return minting_time
+                            
 
-                # The lock is automatically released here, before minting
-                return minting_time
 
+   
               
 async def send_websocket_request(action, data,ip, port):
         # Define the WebSocket URL
@@ -287,3 +293,5 @@ async def send_websocket_request(action, data,ip, port):
 
         # Return the response
         return json.loads(response)
+
+

@@ -60,7 +60,7 @@ async def register_node():
             message=None
         )
         
-        node.transaction_pool.append(transaction)
+        # node.transaction_pool.append(transaction)
         node.wallet.balance += total_bcc
 
         print("Genesis transaction added to transaction pool")
@@ -237,10 +237,10 @@ async def handler(websocket):
                 if any(trans.transaction_id == transaction.transaction_id for transaction in node.chain.blocks[-1].transactions):
                     print("Found transaction in block")
                     if trans.sender_address == node.wallet.public_key:
-                        node.wallet.balance -= trans.to_dict()['amount']
+                        node.wallet.balance -= int(trans.to_dict()['amount'])
                     
                     if trans.receiver_address == node.wallet.public_key:
-                        node.wallet.balance += trans.to_dict()['amount']
+                        node.wallet.balance += int(trans.to_dict()['amount'])
 
                     node.transaction_pool.remove(trans)
         
@@ -282,8 +282,18 @@ async def handler(websocket):
             await websocket.send(json.dumps({'stake': node.stake}))
 
         elif data['action'] == 'selected_as_validator':
-            minting_time = await node.chain.mint_block(node)
-            await websocket.send(json.dumps({'minting_time': minting_time}))
+            
+            curr_index = data['data']['index']
+            print(f'Current index: {curr_index} and last index: {node.chain.blocks[-1].index}')
+            if node.chain.blocks[-1].index != curr_index:
+               
+                minting_time = await node.chain.mint_block(node)
+              
+
+                await websocket.send(json.dumps({'minting_time': minting_time}))
+
+            else:
+                await websocket.send(json.dumps({'minting_time': '-1'}))
 
      
         
@@ -308,11 +318,12 @@ async def handler(websocket):
 
         elif data['action'] == 'new_block':
             if node.chain.blocks[-1].current_hash != data['data']['hash']:
-                node.chain.add_block(Block.from_dict(data['data']))
-            node.current_block = None   
-
-            await websocket.send(json.dumps({'status':200,'message':'Block added to chain'}))
-
+                 node.chain.add_block(Block.from_dict(data['data']))
+                 node.current_block = None   
+                 await websocket.send(json.dumps({'status':200,'message':'Block added to chain'}))
+            else:
+                await websocket.send(json.dumps({'status':400,'message':'Block already in chain'}))
+     
 
 
 # Start the WebSocket server
@@ -325,6 +336,7 @@ async def main():
 
 # Run the server
 if __name__ == "__main__":
+    
     asyncio.run(main())
 
                 

@@ -46,9 +46,9 @@ class Blockchain:
         current_block = node.current_block
         
         current_block.validator = node.wallet.public_key
-      
-        print(f'Current chain is {self.to_dict()}')
-        print(f'Previous block is {self.blocks[-1]}')
+
+        print(f'Node {node.id} is minting a block...')
+        
 
         # new_block = Block(
         #     index=self.blocks[-1].index + 1 ,
