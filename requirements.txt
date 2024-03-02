@@ -1,0 +1,6 @@
+
+pycryptodome
+websockets
+inquirer
+texttable
+python-dotenv
