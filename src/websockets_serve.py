@@ -68,12 +68,7 @@ async def register_node():
       
         genesis_block.validator = 0
         genesis_block.transactions.append(transaction)
-
         node.chain.add_block(genesis_block)
-
-        
-
-
         print("Genesis block added to chain")
 
 
@@ -237,17 +232,26 @@ async def handler(websocket):
         elif data['action'] == 'update_balance':
              # Create a copy of the transaction_pool for iteration
             transaction_pool_copy = node.transaction_pool.copy()
+            fees_sum = 0
             for trans in transaction_pool_copy:
                 if any(trans.transaction_id == transaction.transaction_id for transaction in node.chain.blocks[-1].transactions):
-                   
+                    flag = 1 if trans.type_of_transaction == 'coin' and node.id != 0 else 0
                     if trans.sender_address == node.wallet.public_key:
-                        node.wallet.balance -= int(trans.to_dict()['amount'])
-                    
+                        node.wallet.balance -= int(trans.to_dict()['amount']) * (1 + flag * 0.03)
+                        fees_sum += flag * 0.03 * int(trans.to_dict()['amount'])
+
                     if trans.receiver_address == node.wallet.public_key:
                         node.wallet.balance += int(trans.to_dict()['amount'])
 
                     # Remove the transaction from the original transaction_pool
                     node.transaction_pool.remove(trans)
+
+            validator = node.chain.blocks[-1].validator
+            for ring_node in node.ring:
+                if ring_node['public_key'] == validator:
+                    await send_websocket_request('get_fees', {'fees':fees_sum}, ring_node['ip'], ring_node['port'])
+                    break
+            
             
             print(f"Node {node.id} received 'update_balance' action")
 
@@ -327,6 +331,13 @@ async def handler(websocket):
             else:
                 await websocket.send(json.dumps({'status':400,'message':'Block already in chain'}))
      
+        elif data['action'] == 'get_fees':
+
+            fees = data['data']['fees']
+            node.wallet.balance += fees
+
+            await websocket.send(json.dumps({'message': "Fees received"}))
+
 
 
 # Start the WebSocket server

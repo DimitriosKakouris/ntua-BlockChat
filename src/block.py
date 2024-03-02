@@ -55,6 +55,7 @@ class Block:
             'transactions': [transaction.to_dict() for transaction in self.transactions],  # Assuming Transaction has a to_dict method
             'previous_hash': self.previous_hash,
             'hash': self.current_hash,
+            'validator': self.validator
         }
     
     @classmethod
@@ -63,6 +64,8 @@ class Block:
         block.timestamp = data['timestamp']
         block.transactions = [Transaction.from_dict(t) for t in data['transactions']]
         block.current_hash = data['hash']
+        block.validator = data['validator']
+        block.capacity = 2
 
         return block
 
@@ -89,6 +92,10 @@ class Block:
         total_stake_sum = 0
         for res in total_stake:
             total_stake_sum += int(res['stake'])
+
+        seed = int(self.previous_hash, 16)  # Convert hex hash to an integer
+        
+        random.seed(seed)
 
         # total_stake = sum(node.stake for node in nodes)
         selection_point = random.uniform(0, total_stake_sum)
