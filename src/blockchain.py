@@ -1,9 +1,6 @@
 from block import Block
-import random
-import json
-import websockets
-from datetime import datetime
 import time
+from wsmanager import send_websocket_request
 
 
 
@@ -54,7 +51,7 @@ class Blockchain:
 
         curr_balances = {}
         for ring_member in node.ring:
-            res = await send_websocket_request('get_balance', {}, ring_member['ip'], ring_member['port'])
+            res = await send_websocket_request('get_balance', {},  ring_member['ip'], ring_member['port'])
             curr_balances[ring_member['public_key']] = res['balance']
 
         for transaction in current_block.transactions:
@@ -70,9 +67,9 @@ class Blockchain:
             return {'minting_time': -1}
         
         current_block.validator = node.wallet.public_key
-        print(current_block.validator)
+        # print(current_block.validator)
 
-        print(f'Node {node.id} is minting a block...')
+        # print(f'Node {node.id} is minting a block...')
     
        
         
@@ -85,25 +82,3 @@ class Blockchain:
         return minting_time
     
 
-
-async def send_websocket_request(action, data,ip, port):
-        # Define the WebSocket URL
-        ws_url = f"ws://{ip}:{port}"
-
-        # Define the request
-        request = {
-            'action': action,
-            'data': data
-        }
-
-        print(f"Sending request to {ws_url}: {request}")
-        # Connect to the WebSocket server and send the request
-        async with websockets.connect(ws_url) as websocket:
-            await websocket.send(json.dumps(request))
-
-            # Wait for a response from the server
-            response = await websocket.recv()
-
-        # Return the response
-        return json.loads(response)
-              

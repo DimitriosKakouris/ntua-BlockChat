@@ -3,7 +3,7 @@ import time
 import json
 from Crypto.Hash import SHA256
 from transaction import Transaction
-import websockets
+from wsmanager import send_websocket_request
 
 
 class Block:
@@ -86,7 +86,7 @@ class Block:
             res_data = {'stake': res['stake'], 'ip': ring_node['ip'], 'port': ring_node['port'], 'id': ring_node['id']}
             total_stake.append(res_data) # Has stake, ip, port, id
 
-        print(total_stake[0]['stake'])
+        # print(total_stake[0]['stake'])
        
         
         total_stake_sum = 0
@@ -109,26 +109,3 @@ class Block:
         # Fallback, should not reach here if implemented correctly
         raise Exception("Failed to select a validator. Check the implementation.")
 
-
-
-async def send_websocket_request(action, data,ip, port):
-        # Define the WebSocket URL
-        ws_url = f"ws://{ip}:{port}"
-
-        # Define the request
-        request = {
-            'action': action,
-            'data': data
-        }
-
-        print(f"Sending request to {ws_url}: {request}")
-        # Connect to the WebSocket server and send the request
-        async with websockets.connect(ws_url) as websocket:
-            await websocket.send(json.dumps(request))
-
-            # Wait for a response from the server
-            response = await websocket.recv()
-
-        # Return the response
-        return json.loads(response)
-              

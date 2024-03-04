@@ -1,7 +1,6 @@
 import inquirer
 import os
 import asyncio
-import websockets
 from websockets_serve import send_websocket_request
 
 
@@ -76,7 +75,7 @@ async def client():
             
         elif choice == 'View last transactions':
             # Assuming you have a specific message format for this request
-            response = await send_websocket_request('view_last_transactions', {} ,ip_address, port)
+            response = await send_websocket_request('view_last_transactions', {}, ip_address, port)
             print(response)
             
         elif choice == 'Show balance':

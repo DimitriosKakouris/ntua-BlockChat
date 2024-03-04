@@ -1,8 +1,8 @@
 # ntua-blockchain 2023-24
 
-<p align="center">
+<!-- <p align="center">
   <img src="./images/logo.png" max-width="50%" />
-</p>
+</p> -->
 
 #### BlockChat
 
@@ -31,7 +31,7 @@ Implement the following functions:
 
 ``` docker compose up ```
 
-3. To enter a node (client), for example first node:
+3. To enter a node (client) and enter the network, for example first node:
 
 ``` docker-compose exec node1 bash entrypoint.sh ```
 
