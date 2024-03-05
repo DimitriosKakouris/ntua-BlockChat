@@ -195,13 +195,16 @@ async def handler(websocket):
             wallet_address = node.wallet.public_key
             node_id = node.id
 
-            await websocket.send(json.dumps({'Node ID':node_id,'chain':node.chain.to_dict(),'wallet_address':wallet_address,'balance': balance}))
+            await websocket.send(json.dumps({'Node ID':node_id,'chain':node.chain.to_dict(),'wallet_address':wallet_address,'balance': balance, 'stake':node.stake_amount}))
 
         elif data['action'] == 'view_last_transactions':
-            last_transactions = []
-            for trans in last_transactions:
-                last_transactions.append(trans.to_dict())   
-            await websocket.send(json.dumps({'Last pending transactions': last_transactions}))
+
+            # last_block_transactions = node.chain.blocks[-1].transactions
+            # last_block_validator = node.chain.blocks[-1].validator
+            # last_transactions = [trans.to_dict() for trans in last_block_transactions]
+            last_validated_block = node.chain.blocks[-1].view_block()
+            await websocket.send(json.dumps(last_validated_block))
+            # await websocket.send(json.dumps({'Last validated block info': last_validated_block}))
 
         elif data['action'] == 'update_balance':
              # Create a copy of the transaction_pool for iteration

@@ -2,7 +2,7 @@ import inquirer
 import os
 import asyncio
 from websockets_serve import send_websocket_request
-
+import json
 
 
 ip_address = os.getenv('IP')
@@ -23,7 +23,7 @@ async def client():
         menu = [ 
             inquirer.List('menu', 
             message= "BlockChat Client", 
-            choices= ['New Transaction', 'New Message','Add Stake', 'View last transactions', 'Show balance', 'Help', 'Exit'], 
+            choices= ['New Transaction', 'New Message','Add Stake', 'View last block', 'Show balance', 'Help', 'Exit'], 
             ),
         ]
         choice = inquirer.prompt(menu)['menu']
@@ -31,7 +31,7 @@ async def client():
 
         if choice == 'New Transaction':
             questions = [
-                inquirer.Text(name='receiver', message='What is the Receiver wallet address?'),
+                inquirer.Text(name='receiver', message='What is the Receiver ID?'),
                 inquirer.Text(name='amount', message='How many BlockChat Coins to send?'),
             ]
             answers = inquirer.prompt(questions)
@@ -48,7 +48,7 @@ async def client():
 
         elif choice == 'New Message':
             questions = [
-                inquirer.Text(name='receiver', message='What is the Receiver ID of the lucky one?'),
+                inquirer.Text(name='receiver', message='What is the Receiver ID?'),
                 inquirer.Text(name='message', message='What is the message?'),
             ]
             answers = inquirer.prompt(questions)
@@ -73,16 +73,18 @@ async def client():
             response = await send_websocket_request('stake', {'amount': answers['amount']}, ip_address, port)
             print(response)
             
-        elif choice == 'View last transactions':
+        elif choice == 'View last block':
             # Assuming you have a specific message format for this request
             response = await send_websocket_request('view_last_transactions', {}, ip_address, port)
-            print(response)
+            print(json.dumps(response, indent=4))
             
         elif choice == 'Show balance':
             # Assuming you have a specific message format for this request
             print(ip_address, port)
             response = await send_websocket_request('get_balance', {}, ip_address, port)
-            print(response)
+            print("Balance:", response['balance'])
+            print("Amount reserved for staking:", response['stake'])
+            #print(response)
 
         elif choice == 'Help':
             # Display help text
@@ -92,7 +94,7 @@ async def client():
             print("Exiting...")
             break
 
-        input("Press any key to continue...")
+        input("Press enter to continue...")
         clear_console()
 
 if __name__ == "__main__":
