@@ -55,11 +55,12 @@ class Blockchain:
             curr_balances[ring_member['public_key']] = res['balance']
 
         for transaction in current_block.transactions:
-            flag = 1 if transaction.type_of_transaction == 'coin' else 0
-            if int(curr_spending[transaction.sender_address]) + int(transaction.amount) * (1 + flag * 0.03)  > int(curr_balances[transaction.sender_address]):
+            flag = 1 if transaction.type_of_transaction == 'coin' and transaction.receiver_address != '0' else 0
+            stake_flag = 1 if transaction.receiver_address == '0' else 0
+            if int(curr_spending[transaction.sender_address]) + int(transaction.amount) * (1 + flag * 0.03)  > int(curr_balances[transaction.sender_address]) + int(node.stake_amount) * stake_flag:
                 current_block.transactions.remove(transaction)
             else:
-                curr_spending[transaction.sender_address] += int(transaction.amount) * (1 + flag * 0.03)
+                curr_spending[transaction.sender_address] += (int(transaction.amount) - int(node.stake_amount) * stake_flag) * (1 + flag * 0.03)
 
              
 

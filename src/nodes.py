@@ -17,7 +17,7 @@ class Node:
         self.ip = None
         self.port = None
         self.transaction_pool = []
-        self.stake = 0
+        self.stake_amount = 0
         self.current_block = None
         self.node_lock = Lock()
         # self.chain_lock = Lock()
@@ -35,7 +35,7 @@ class Node:
         node.ip = data['ip']
         node.port = data['port']
         node.transaction_pool = data['transaction_pool']
-        node.stake = data['stake']
+        node.stake_amount = data['stake_amount']
         node.current_block = Block.from_dict(data['current_block'])
         node.block_lock = Lock()
         node.chain_lock = Lock()
@@ -44,19 +44,19 @@ class Node:
 
        
     
-    def stake(self, amount):
+    async def stake(self, amount):
         """
         Updates the node's stake amount for the Proof of Stake process.
         The node can increase or decrease its stake, within the limits of its available balance.
         """
-        stake_trasaction = self.create_transaction(self.wallet.public_key, "coin", amount)
+        await self.create_transaction('0', "coin", amount)
 
-        if not stake_trasaction["success"]:
-            return False
+        # if not stake_trasaction["success"]:
+        #     return False
         
-        else:
-            self.stake = amount
-            return True
+        # else:
+        #     #self.stake = amount
+        #     return True
     
 
     async def validate_transaction(self,transaction):
