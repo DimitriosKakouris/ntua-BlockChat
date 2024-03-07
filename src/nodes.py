@@ -4,8 +4,6 @@ from wallet import Wallet
 from block import Block
 from wsmanager import send_websocket_request
 import asyncio
-from threading import Lock
-
 
 
 class Node:
@@ -16,11 +14,11 @@ class Node:
         self.id = None
         self.ip = None
         self.port = None
+        self.current_block = None
         self.transaction_pool = []
         self.stake_amount = 0
-        self.current_block = None
-        self.node_lock = Lock()
-        # self.chain_lock = Lock()
+        self.account_space = {}
+      
        
 
 
@@ -37,13 +35,29 @@ class Node:
         node.transaction_pool = data['transaction_pool']
         node.stake_amount = data['stake_amount']
         node.current_block = Block.from_dict(data['current_block'])
-        node.block_lock = Lock()
-        node.chain_lock = Lock()
+      
      
         return node
 
        
+
+   
+    def update_balance(self, public_key, balance):
+        if public_key not in self.account_space:
+            self.account_space[public_key] = {'balance': balance}
+        else:
+            self.account_space[public_key]['balance'] = balance
     
+
+    
+
+    def get_balance(self, public_key):
+        if public_key in self.account_space:
+            return self.account_space[public_key]['balance']
+        else:
+            return None
+        
+
     async def stake(self, amount):
         """
         Updates the node's stake amount for the Proof of Stake process.
@@ -66,14 +80,18 @@ class Node:
         if not transaction.verify_signature():
             return False
         
-        # Check if the sender has enough balance
-        
-        # sender_ip = [ring_node['ip'] for ring_node in self.ring if ring_node['public_key'] == transaction.sender_address][0]
-        # sender_port = [ring_node['port'] for ring_node in self.ring if ring_node['public_key'] == transaction.sender_address][0]
-        # res = await send_websocket_request('get_balance', {}, sender_ip, sender_port)
+    
+        sender_balance = self.account_space[transaction.sender_address]['balance']
+        print('Sender balance:', sender_balance)
+        print('Transaction amount:', transaction.amount)
+        if sender_balance < transaction.amount:
+            return False
 
-        # if res['balance'] < int(transaction.amount):
-        #     return False
+       
+
+        
+
+     
         return True
         
     def validate_block(self, block):
@@ -91,6 +109,7 @@ class Node:
         return True
     
     def register_node_to_ring(self,id, ip, port, public_key):
+
         self.ring.append({
             "id": id,
             "ip": ip,
@@ -98,6 +117,24 @@ class Node:
             "public_key": public_key,
            
         })
+
+        if self.id == id:
+            self.account_space[public_key] = {
+                'id' : id,
+                "ip": ip,
+                "port": port,
+                "balance": 3000,
+                "stake": 0
+
+            }
+        else:
+            self.account_space[public_key] = {
+                'id' : id,
+                "ip": ip,
+                "port": port,
+                "balance": 1000,
+                "stake": 0
+            }
 
     
     async def create_transaction(self, receiver_public_key, type_of_transaction, amount, message=None):
@@ -153,6 +190,12 @@ class Node:
         return response
     
 
+    async def share_account_space(self, ring_node):
+
+        response = await send_websocket_request('init_account_space', {}, ring_node['ip'], ring_node['port'])
+        return response
+    
+
     async def send_transaction(self, node, transaction):
         """Asynchronously sends a transaction to a single node via WebSocket."""
         response = await send_websocket_request('update_block', transaction.to_dict(),  node['ip'], node['port'])
@@ -174,7 +217,7 @@ class Node:
         # print("Responses:", responses)
 
      
-        await send_websocket_request('update_balance', {},  self.ip, self.port)
+        # await send_websocket_request('update_balance', {},  self.ip, self.port)
         # # Check responses for validation and receipt acknowledgment
       
 
@@ -194,18 +237,20 @@ class Node:
         responses = await asyncio.gather(*tasks)
         print("Responses:", responses)
 
-        for response in responses:
-            if response['status'] == 200:
+
+
+        # for response in responses:
+        #     if response['status'] == 200:
                
-            #    print("Block accepted by the network")
-               for ring_node in self.ring:
-                    await send_websocket_request('update_balance', {},  ring_node['ip'], ring_node['port'])
+        #     #    print("Block accepted by the network")
+        #        for ring_node in self.ring:
+        #             await send_websocket_request('update_balance', {},  ring_node['ip'], ring_node['port'])
                     
-               break
+        #        break
             
-            else:
-                # print("Block rejected by the network")
-                break
+        #     else:
+        #         # print("Block rejected by the network")
+        #         break
                     
 
    
@@ -243,16 +288,19 @@ class Node:
             )
         
         if await self.validate_transaction(transaction):
-
             if self.current_block.add_transaction(transaction):
+               return {'status': 200, 'message': 'Block is full'}
+            
+            else:
+                return {'status': 200, 'message': 'Transaction added to block'}
 
-                validator = await self.current_block.select_validator(self.ring)  
-                with self.node_lock:
-                    res = await send_websocket_request('selected_as_validator', {'index':str(self.current_block.index)},  validator['ip'], validator['port'])
-                    minting_time = res['minting_time'] 
+                # validator = await self.current_block.select_validator(self.ring)  
+                # with self.node_lock:
+                #     res = await send_websocket_request('selected_as_validator', {'index':str(self.current_block.index)},  validator['ip'], validator['port'])
+                #     minting_time = res['minting_time'] 
             
             
-                return minting_time
+                # return minting_time
                             
 
 

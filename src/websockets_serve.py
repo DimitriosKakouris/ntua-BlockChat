@@ -71,6 +71,8 @@ async def register_node():
 
     else: 
         await node.unicast_node(bootstrap_node)
+        await send_websocket_request('init_account_space', {}, node.ip, node.port)
+        
   
 
 
@@ -135,6 +137,8 @@ async def handler(websocket):
                     # In the share_ring method
                     # print(f"Sharing ring with node {ring_node['id']}")
                     await bootstrap_node.share_ring(ring_node)
+                    await bootstrap_node.share_account_space(ring_node)
+                    # await send_websocket_request('init_account_space', {}, ring_node['ip'], ring_node['port'])
                   
 
             for ring_node in bootstrap_node.ring:
@@ -253,6 +257,28 @@ async def handler(websocket):
 
             await websocket.send(json.dumps({'message': "Ring updated"}))
 
+        elif data['action'] == 'init_account_space':
+
+            #Only run from non-bootstrap nodes
+            for ring_node in node.ring:
+                if ring_node['id'] == 0:
+                    node.account_space[ring_node['public_key']] = {
+                        'ip': ring_node['ip'],
+                        'id': ring_node['id'],
+                        'port': ring_node['port'],
+                        'balance': 3000,
+                        'stake': 0
+                    }
+                else:
+                    node.account_space[ring_node['public_key']] = {
+                        'ip': ring_node['ip'],
+                        'id': ring_node['id'],
+                        'port': ring_node['port'],
+                        'balance': 1000,
+                        'stake': 0
+                    }
+            await websocket.send(json.dumps({'message': "Account space initialized"}))
+
         elif data['action'] == 'update_chain':
            
             # Get the serialized chain from the other node
@@ -286,32 +312,77 @@ async def handler(websocket):
         
         elif data['action'] == 'update_block':
             transaction = data['data']
-            
-            if transaction['recipient_address'] == node.wallet.public_key:
-                transaction_recv = Transaction.from_dict(transaction)
-                # print(f"Node {node.id} to receive: {transaction_recv.to_dict()['amount']}")
-                node.transaction_pool.append(transaction_recv)
 
-            elif transaction['sender_address'] == node.wallet.public_key:
-                transaction_send = Transaction.from_dict(transaction)
-                # print(f"Node {node.id} to give: {transaction_send.to_dict()['amount']}")
-                node.transaction_pool.append(transaction_send)
+            #Update account state
+            # print(node.account_space)
 
-            transaction = Transaction.from_dict(transaction)
-            res = await node.add_transaction_to_block(transaction)
+            if await node.validate_transaction(Transaction.from_dict(transaction)):
 
-            if res !=  0:
-                await websocket.send(json.dumps({'message':'Minting was done','minting_time': res}))
+                node.account_space[transaction['sender_address']]['balance'] -= transaction['amount']
+                node.account_space[transaction['recipient_address']]['balance'] += transaction['amount']
+
+                
+                
+                # if transaction['recipient_address'] == node.wallet.public_key:
+                #     transaction_recv = Transaction.from_dict(transaction)
+                #     # print(f"Node {node.id} to receive: {transaction_recv.to_dict()['amount']}")
+                #     node.transaction_pool.append(transaction_recv)
+
+                # elif transaction['sender_address'] == node.wallet.public_key:
+                #     transaction_send = Transaction.from_dict(transaction)
+                #     # print(f"Node {node.id} to give: {transaction_send.to_dict()['amount']}")
+                #     node.transaction_pool.append(transaction_send)
+
+                transaction = Transaction.from_dict(transaction)
+                node.transaction_pool.append(transaction)
+                res = await node.add_transaction_to_block(transaction)
+
+                # await websocket.send(json.dumps({'message':'Transaction added to block'}))
+
+                if res['status'] == 200 and res['message'] == 'Block is full':
+                    await send_websocket_request('mint_block', {}, node.ip, node.port)
+
+                elif res['status'] == 200 and res['message'] == 'Transaction added to block':
+                    await websocket.send(json.dumps({'message':'Transaction added to block'}))
+
+                # elif res['status'] == 400:
+                #     await websocket.send(json.dumps({'message':'Transaction Invalid'}))
+                    
             else:
-                await websocket.send(json.dumps({'message':'Block is not full yet'}))
+                await websocket.send(json.dumps({'message':'Transaction Invalid'}))
+            # else:
+            #     await websocket.send(json.dumps({'message':'Block is not full yet'}))
+
+
+
+        elif data['action'] == 'mint_block':
+           
+            validator = await node.current_block.select_validator(node)
+
+            await node.chain.mint_block(node)
+
+            if node.id == validator['id']:
+
+                await node.broadcast_block(node.current_block)
+                await websocket.send(json.dumps({'message':'Block minted/Validator'}))
+
+                for ring_node in node.ring:
+                    await send_websocket_request('update_balance', {}, ring_node['ip'], ring_node['port'])
+
+            else:
+                await websocket.send(json.dumps({'message':'Block minted/Not the validator'}))
+
+           
+            #     await websocket.send(json.dumps({'status':200,'message':'Block minted'}))
+            # else:
+            #     await websocket.send(json.dumps({'status':400,'message':'Block already minted'}))
 
         elif data['action'] == 'new_block':
-            if node.chain.blocks[-1].current_hash != data['data']['hash']:
-                 node.chain.add_block(Block.from_dict(data['data']))
-                 node.current_block = None   
-                 await websocket.send(json.dumps({'status':200,'message':'Block added to chain'}))
-            else:
-                await websocket.send(json.dumps({'status':400,'message':'Block already in chain'}))
+            # if node.chain.blocks[-1].current_hash != data['data']['hash']:
+            node.chain.add_block(Block.from_dict(data['data']))
+            node.current_block = None   
+            await websocket.send(json.dumps({'status':200,'message':'Block added to chain'}))
+           
      
         elif data['action'] == 'get_fees':
 

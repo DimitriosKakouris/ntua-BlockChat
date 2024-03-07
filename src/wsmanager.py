@@ -19,6 +19,7 @@ async def send_websocket_request(action, data, ip, port):
 
         # Wait for a response from the server
         response = await websocket.recv()
+        print(f"Received response from {ws_url}: {response}")
 
     # Return the response
     return json.loads(response)

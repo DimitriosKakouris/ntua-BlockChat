@@ -71,7 +71,7 @@ class Block:
 
     
 
-    async def select_validator(self,nodes):
+    async def select_validator(self,node):
         """
         Selects a validator node based on the stake of each node.
         The higher the stake, the higher the chance of being selected as a validator.
@@ -81,17 +81,17 @@ class Block:
         """
 
         total_stake = []
-        for ring_node in nodes:
-            res = await send_websocket_request('get_stake', {}, ring_node['ip'], ring_node['port'])
-            res_data = {'stake': res['stake'], 'ip': ring_node['ip'], 'port': ring_node['port'], 'id': ring_node['id']}
-            total_stake.append(res_data) # Has stake, ip, port, id
+        for pk in node.account_space:
+
+            node_stake = node.account_space[pk]
+            total_stake.append(node_stake) # Has stake, ip, port, id
 
         # print(total_stake[0]['stake'])
        
         
         total_stake_sum = 0
-        for res in total_stake:
-            total_stake_sum += int(res['stake'])
+        for node_stake in total_stake:
+            total_stake_sum += int(node_stake['stake'])
 
         seed = int(self.previous_hash, 16)  # Convert hex hash to an integer
         
@@ -101,10 +101,10 @@ class Block:
         selection_point = random.uniform(0, total_stake_sum)
 
         current = 0
-        for res in total_stake:
-            current += int(res['stake'])
+        for node_stake in total_stake:
+            current += int(node_stake['stake'])
             if current >= selection_point:
-                return res # Return the selected node's ip, port, id
+                return node_stake # Return the selected node's ip, port, id
 
         # Fallback, should not reach here if implemented correctly
         raise Exception("Failed to select a validator. Check the implementation.")

@@ -30,11 +30,11 @@ class Blockchain:
 
     async def mint_block(self, node):
         
-        if node.current_block.validator != None:
-            return {'minting_time': -1}
+        # if node.current_block.validator != None:
+        #     return {'minting_time': -1}
         
-        # Implementing the proof of stake
-        previous_block = self.blocks[-1]
+        # # Implementing the proof of stake
+        # previous_block = self.blocks[-1]
 
         # Assuming each block has a 'current_hash' attribute
         # seed = int(previous_block.current_hash, 16)  # Convert hex hash to an integer
@@ -45,22 +45,22 @@ class Blockchain:
 
         current_block = node.current_block
 
-        curr_spending = {}
-        for ring_member in node.ring:
-            curr_spending[ring_member['public_key']] = 0
+        # curr_spending = {}
+        # for ring_member in node.ring:
+        #     curr_spending[ring_member['public_key']] = 0
 
-        curr_balances = {}
-        for ring_member in node.ring:
-            res = await send_websocket_request('get_balance', {},  ring_member['ip'], ring_member['port'])
-            curr_balances[ring_member['public_key']] = res['balance']
+        # curr_balances = {}
+        # for ring_member in node.ring:
+        #     res = await send_websocket_request('get_balance', {},  ring_member['ip'], ring_member['port'])
+        #     curr_balances[ring_member['public_key']] = res['balance']
 
-        for transaction in current_block.transactions:
-            flag = 1 if transaction.type_of_transaction == 'coin' and transaction.receiver_address != '0' else 0
-            stake_flag = 1 if transaction.receiver_address == '0' else 0
-            if int(curr_spending[transaction.sender_address]) + int(transaction.amount) * (1 + flag * 0.03)  > int(curr_balances[transaction.sender_address]) + int(node.stake_amount) * stake_flag:
-                current_block.transactions.remove(transaction)
-            else:
-                curr_spending[transaction.sender_address] += (int(transaction.amount) - int(node.stake_amount) * stake_flag) * (1 + flag * 0.03)
+        # for transaction in current_block.transactions:
+        #     flag = 1 if transaction.type_of_transaction == 'coin' and transaction.receiver_address != '0' else 0
+        #     stake_flag = 1 if transaction.receiver_address == '0' else 0
+        #     if int(curr_spending[transaction.sender_address]) + int(transaction.amount) * (1 + flag * 0.03)  > int(curr_balances[transaction.sender_address]) + int(node.stake_amount) * stake_flag:
+        #         current_block.transactions.remove(transaction)
+        #     else:
+        #         curr_spending[transaction.sender_address] += (int(transaction.amount) - int(node.stake_amount) * stake_flag) * (1 + flag * 0.03)
 
              
 
@@ -76,8 +76,6 @@ class Blockchain:
         
         # Calculate minting time
         minting_time = time.time() - start_time
-
-        await node.broadcast_block(current_block)
 
      
         return minting_time
