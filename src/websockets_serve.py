@@ -351,7 +351,7 @@ async def handler(websocket):
 
             if await node.validate_transaction(Transaction.from_dict(transaction)):
 
-                flag = 1 if transaction['type_of_transaction'] == 'coin' and transaction['receiver_address'] != '0' else 0
+                flag = 1 if transaction['type_of_transaction'] == 'coin' and transaction['recipient_address'] != '0' else 0
                 message_flag = 0 if transaction['type_of_transaction'] == 'message' else 1
                 node.account_space[transaction['sender_address']]['balance'] -= transaction['amount'] * (1 + 0.03 * flag)
                 node.account_space[transaction['recipient_address']]['balance'] += transaction['amount'] * message_flag
