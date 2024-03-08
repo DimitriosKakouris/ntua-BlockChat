@@ -4,6 +4,7 @@ from wallet import Wallet
 from block import Block
 from wsmanager import send_websocket_request
 import asyncio
+import random
 
 
 class Node:
@@ -82,20 +83,22 @@ class Node:
         
     
         sender_balance = self.account_space[transaction.sender_address]['balance']
+
+        flag = 1 if transaction.type_of_transaction == 'coin' and transaction.receiver_address != '0' else 0
+        stake_flag = 1 if transaction.receiver_address == '0' else 0
+        if int(transaction.amount) * (1 + flag * 0.03)  > int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag:
+            return False
         print('Sender balance:', sender_balance)
         print('Transaction amount:', transaction.amount)
-        if sender_balance < transaction.amount:
-            return False
-
-       
-
-        
-
      
         return True
         
     def validate_block(self, block):
-        return (block.previous_hash == self.chain.blocks[-1].current_hash)
+        # seed = int(self.previous_hash, 16)  # Convert hex hash to an integer
+        # random.seed(seed)
+        validator = block.select_validator(self)
+    
+        return (block.previous_hash == self.chain.blocks[-1].current_hash) and (block.validator == validator)
     
     def validate_chain(self, blocks):
         """Validates all the blocks of a chain"""
@@ -124,8 +127,9 @@ class Node:
                 "ip": ip,
                 "port": port,
                 "balance": 3000,
-                "stake": 0
-
+                "valid_balance":3000,
+                "stake": 0,
+                "valid_stake": 0
             }
         else:
             self.account_space[public_key] = {
@@ -133,7 +137,9 @@ class Node:
                 "ip": ip,
                 "port": port,
                 "balance": 1000,
-                "stake": 0
+                "valid_balance":1000,
+                "stake": 0,
+                "valid_stake": 0
             }
 
     
@@ -159,7 +165,10 @@ class Node:
         # Sign the transaction
         transaction.sign_transaction(self.wallet.private_key)
         # Broadcast transaction
-        await self.broadcast_transaction(transaction)
+        valid = await self.broadcast_transaction(transaction)
+
+        if not valid:
+            print("Invalid transaction")
        
 
         self.wallet.nonce += 1
@@ -208,11 +217,15 @@ class Node:
         responses = []
 
         for node in self.ring:
-                task = asyncio.create_task(self.send_transaction(node, transaction))
-                tasks.append(task)
+            task = asyncio.create_task(self.send_transaction(node, transaction))
+            tasks.append(task)
 
         for task in tasks:
             responses.append(await task)
+
+        if any(res["message"] == "Transaction Invalid" for res in responses):
+            return False
+        return True
 
         # print("Responses:", responses)
 
