@@ -52,11 +52,11 @@ class Node:
 
     
 
-    def get_balance(self, public_key):
-        if public_key in self.account_space:
-            return self.account_space[public_key]['balance']
-        else:
-            return None
+    # def get_balance(self, public_key):
+    #     if public_key in self.account_space:
+    #         return self.account_space[public_key]['balance']
+    #     else:
+    #         return None
         
 
     async def stake(self, amount):
@@ -84,21 +84,23 @@ class Node:
     
         sender_balance = self.account_space[transaction.sender_address]['balance']
 
-        flag = 1 if transaction.type_of_transaction == 'coin' and transaction.receiver_address != '0' else 0
+        flag = 1 if transaction.type_of_transaction == 'coin' and (self.account_space[transaction.sender_address]['id']!= 0 or transaction.nonce >= len(self.ring) ) else 0
         stake_flag = 1 if transaction.receiver_address == '0' else 0
         if int(transaction.amount) * (1 + flag * 0.03)  > int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag:
             return False
-        print('Sender balance:', sender_balance)
-        print('Transaction amount:', transaction.amount)
+        # print('Transaction:', transaction.to_dict())
+        # print('Balance:', int(sender_balance))
+        # print('Transaction amount+fees:', int(transaction.amount) * (1 + flag * 0.03))
      
         return True
         
-    def validate_block(self, block):
+    async def validate_block(self, block):
         # seed = int(self.previous_hash, 16)  # Convert hex hash to an integer
         # random.seed(seed)
-        validator = block.select_validator(self)
+        validator = await block.select_validator(self)
+        
     
-        return (block.previous_hash == self.chain.blocks[-1].current_hash) and (block.validator == validator)
+        return (block.previous_hash == self.chain.blocks[-1].current_hash) and (block.validator == validator['pk'])
     
     def validate_chain(self, blocks):
         """Validates all the blocks of a chain"""
@@ -137,9 +139,7 @@ class Node:
                 "ip": ip,
                 "port": port,
                 "balance": 1000,
-                "valid_balance":1000,
                 "stake": 0,
-                "valid_stake": 0
             }
 
     
@@ -167,7 +167,7 @@ class Node:
         # Broadcast transaction
         valid = await self.broadcast_transaction(transaction)
 
-        if not valid:
+        if not valid: #TODO: check if this causes any problem
             print("Invalid transaction")
        
 
@@ -248,7 +248,7 @@ class Node:
                 tasks.append(task)
 
         responses = await asyncio.gather(*tasks)
-        print("Responses:", responses)
+        # print("Responses:", responses)
 
 
 
@@ -306,6 +306,7 @@ class Node:
             
             else:
                 return {'status': 200, 'message': 'Transaction added to block'}
+      
 
                 # validator = await self.current_block.select_validator(self.ring)  
                 # with self.node_lock:

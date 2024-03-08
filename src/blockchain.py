@@ -64,8 +64,8 @@ class Blockchain:
 
              
 
-        if not node.validate_block(current_block):
-            return {'minting_time': -1}
+        # if not await node.validate_block(current_block):
+        #     return {'minting_time': -1}
         
         current_block.validator = node.wallet.public_key
         # print(current_block.validator)

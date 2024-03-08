@@ -84,6 +84,7 @@ class Block:
         for pk in node.account_space:
 
             node_stake = node.account_space[pk]
+            node_stake['pk'] = pk
             total_stake.append(node_stake) # Has stake, ip, port, id
 
         # print(total_stake[0]['stake'])
@@ -104,7 +105,8 @@ class Block:
         for node_stake in total_stake:
             current += int(node_stake['stake'])
             if current >= selection_point:
-                return node_stake # Return the selected node's ip, port, id
+              
+                return node_stake 
 
         # Fallback, should not reach here if implemented correctly
         raise Exception("Failed to select a validator. Check the implementation.")
