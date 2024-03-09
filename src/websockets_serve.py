@@ -145,7 +145,9 @@ async def handler(websocket):
                 if ring_node['id'] != 0:
                     # print("Sending coins to node", ring_node['id'])
 
-                    await bootstrap_node.create_transaction(ring_node['public_key'],'coin' ,1000)
+                    if await bootstrap_node.create_transaction(ring_node['public_key'],'coin',1000):
+                        print(f"Node {ring_node['id']} successfully received 1000 BCCs")
+                        #await websocket.send(json.dumps({'message' :f"Node {node.id} successfully received 1000 BCCs"}))
                    
 
             # Reset the connected nodes
@@ -164,10 +166,12 @@ async def handler(websocket):
             amount = data['data']['amount']
             # print(f"New transaction in websockets server: {receiver} -> {amount}")
             # Perform the transaction
-            await node.create_transaction(receiver, 'coin', amount)
-            # print(response)
-            # Send back a JSON response
-            await websocket.send(json.dumps({'message': "Transaction created"}))
+            if await node.create_transaction(receiver, 'coin', amount):
+                # print(response)
+                # Send back a JSON response
+                await websocket.send(json.dumps({'message': "Transaction created"}))
+            else:
+                await websocket.send(json.dumps({'message': "Transaction failed"}))
 
      
         elif data['action'] == 'new_message':
@@ -180,11 +184,12 @@ async def handler(websocket):
 
             
             message = data['data']['message']
-            # Perform the transaction
-            response = await node.create_transaction(receiver, 'message', 0, message)
-
-            # Send back a JSON response
-            await websocket.send(json.dumps({'response': response}))
+            # Perform the transaction 
+            if await node.create_transaction(receiver, 'message', 0, message):
+                # Send back a JSON response
+                await websocket.send(json.dumps({'message': "Message was registered"}))
+            else:
+                await websocket.send(json.dumps({'message': "Sending of the message failed"}))
         
         elif data['action'] == 'validate_transaction':
             new_transaction = data['transaction']
@@ -328,9 +333,10 @@ async def handler(websocket):
 
         elif data['action'] == 'stake':
             amount = data['data']['amount']
-            await node.stake(amount)
-
-            await websocket.send(json.dumps({'message': f"Pending stake: {amount}"}))
+            if await node.stake(amount):
+                await websocket.send(json.dumps({'message': f"Pending stake: {amount}"}))
+            else:
+                await websocket.send(json.dumps({'message': "Failed to reserve amount for staking"}))
 
         elif data['action'] == 'get_stake':
             await websocket.send(json.dumps({'stake': node.stake_amount}))
@@ -349,7 +355,7 @@ async def handler(websocket):
         
         elif data['action'] == 'update_block':
             transaction = data['data']
-
+            print("I am in 'update_block'")
             #Update account state
             # print(node.account_space)
 

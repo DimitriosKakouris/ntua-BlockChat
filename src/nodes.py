@@ -64,7 +64,7 @@ class Node:
         Updates the node's stake amount for the Proof of Stake process.
         The node can increase or decrease its stake, within the limits of its available balance.
         """
-        await self.create_transaction('0', "coin", amount)
+        return await self.create_transaction('0', "coin", amount)
 
         # if not stake_trasaction["success"]:
         #     return False
@@ -78,6 +78,7 @@ class Node:
         """
         Validate the transaction.
         """
+        print("I am in 'validate_transaction'")
         if not transaction.verify_signature():
             return False
         
@@ -169,9 +170,10 @@ class Node:
 
         if not valid: #TODO: check if this causes any problem
             print("Invalid transaction")
+            return False
        
-
         self.wallet.nonce += 1
+        return True
        
     
 
@@ -207,6 +209,7 @@ class Node:
 
     async def send_transaction(self, node, transaction):
         """Asynchronously sends a transaction to a single node via WebSocket."""
+        print("I am in 'send_transaction'")
         response = await send_websocket_request('update_block', transaction.to_dict(),  node['ip'], node['port'])
         
         return response
@@ -224,6 +227,7 @@ class Node:
             responses.append(await task)
 
         if any(res["message"] == "Transaction Invalid" for res in responses):
+            print("here")
             return False
         return True
 
@@ -313,7 +317,7 @@ class Node:
                 #     res = await send_websocket_request('selected_as_validator', {'index':str(self.current_block.index)},  validator['ip'], validator['port'])
                 #     minting_time = res['minting_time'] 
             
-            
+        return {'status': 400, 'message': "Transaction couldn't be added to block"}
                 # return minting_time
                             
 
