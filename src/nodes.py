@@ -167,6 +167,7 @@ class Node:
         transaction.sign_transaction(self.wallet.private_key)
         # Broadcast transaction
         valid = await self.broadcast_transaction(transaction)
+        
 
         if not valid: #TODO: check if this causes any problem
             print("Invalid transaction")
@@ -177,7 +178,74 @@ class Node:
        
     
 
+    # async def trigger_fees(self, fees_sum):
+    #     for ring_node in self.ring:
+    #             if ring_node['public_key'] == validator:
+    #                 await send_websocket_request('get_fees', {'fees':fees_sum},  ring_node['ip'], ring_node['port'])
+    #                 break
 
+
+
+    async def update_balance(self):
+        transaction_pool_copy = self.transaction_pool.copy()
+        fees_sum = 0
+        for trans in transaction_pool_copy:
+            if any(trans.transaction_id == transaction.transaction_id for transaction in self.chain.blocks[-1].transactions):
+                flag = 1 if trans.type_of_transaction == 'coin' and (self.account_space[trans.sender_address]['id']!= 0 or trans.nonce >= len(self.ring)) else 0 #bootstrap node isn't charged a fee when executing the genesis transactions
+                if trans.sender_address == self.wallet.public_key and trans.receiver_address != '0': #regural transaction
+                    self.wallet.balance -= int(trans.to_dict()['amount']) * (1 + flag * 0.03)
+                    fees_sum += flag * 0.03 * int(trans.to_dict()['amount'])
+                
+                elif trans.sender_address == self.wallet.public_key and trans.receiver_address == '0': #transaction is stake(amount)
+                    self.wallet.balance += self.stake_amount
+                    self.stake_amount = int(trans.to_dict()['amount'])
+                    self.wallet.balance -= self.stake_amount
+
+                if trans.receiver_address == self.wallet.public_key:
+                    if trans.type_of_transaction == 'message': #message 
+                        fees_sum += int(trans.to_dict()['amount'])
+                    else: #regular transaction
+                        self.wallet.balance += int(trans.to_dict()['amount'])
+                    
+                # Remove the transaction from the original transaction_pool
+                self.transaction_pool.remove(trans)
+
+        return fees_sum
+    
+
+    async def update_soft_state(self,fees_sum):
+        validator = self.chain.blocks[-1].validator
+        for ring_node in self.ring:
+            if ring_node['public_key'] == validator and ring_node['id'] != self.id:
+
+                # await send_websocket_request('get_fees', {'fees':fees_sum}, ring_node['ip'], ring_node['port'])
+                break
+
+            if self.wallet.public_key == validator: 
+                self.wallet.balance += fees_sum
+
+
+
+            #     # For fetching balances concurrently and updating account_space
+            # get_balance_tasks = [
+            #     send_websocket_request('get_balance', {}, ring_node['ip'], ring_node['port']) 
+            #     for ring_node in self.ring
+            # ]
+            # balances = await asyncio.gather(*get_balance_tasks)
+                balances = 100
+            
+            print('async get_balance_tasks successful')
+
+            for ring_node, balance in zip(self.ring, balances):
+                self.account_space[ring_node['public_key']]['balance'] = balance['balance']
+                self.account_space[ring_node['public_key']]['stake'] = balance['stake']
+            
+
+            self.current_block = None   
+
+
+    
+       
     async def share_ring(self, node):
         """
         ! BOOTSTRAP ONLY !
@@ -219,12 +287,9 @@ class Node:
         tasks = []
         responses = []
 
-        for node in self.ring:
-            task = asyncio.create_task(self.send_transaction(node, transaction))
-            tasks.append(task)
+        tasks = [self.send_transaction(node, transaction) for node in self.ring]
 
-        for task in tasks:
-            responses.append(await task)
+        responses = await asyncio.gather(*tasks)
 
         if any(res["message"] == "Transaction Invalid" for res in responses):
             print("here")
@@ -245,11 +310,12 @@ class Node:
     async def broadcast_block(self, block):
         """Broadcasts a block to the network using WebSockets."""
         tasks = []
+        responses = []
       
 
-        for node in self.ring:
-                task = asyncio.create_task(self.send_block(node, block))
-                tasks.append(task)
+        tasks = [self.send_block(node, block) for node in self.ring if node['id'] != self.id]
+
+        
 
         responses = await asyncio.gather(*tasks)
         # print("Responses:", responses)
@@ -317,6 +383,7 @@ class Node:
                 #     res = await send_websocket_request('selected_as_validator', {'index':str(self.current_block.index)},  validator['ip'], validator['port'])
                 #     minting_time = res['minting_time'] 
             
+        print(transaction.to_dict())
         return {'status': 400, 'message': "Transaction couldn't be added to block"}
                 # return minting_time
                             
