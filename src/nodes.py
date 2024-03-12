@@ -115,7 +115,7 @@ class Node:
         return True
     
     def register_node_to_ring(self,id, ip, port, public_key):
-
+        print("In register_node_to_ring, node id:", id)
         self.ring.append({
             "id": id,
             "ip": ip,
@@ -182,6 +182,7 @@ class Node:
             
 
     async def send_initial_bcc(self):
+        print("Ring:", self.ring)
         for ring_node in self.ring:
             if ring_node['id'] != 0:
                 # print("Sending coins to node", ring_node['id'])

@@ -40,39 +40,52 @@ if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
     print("I am bootstrap")
 
 
+#bootstrap_ready_event = asyncio.Event()
 # Register node to the cluster
 async def register_node():
-    if node.id == 0:
-        # Add himself to ring
-        node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key)
+    #global bootstrap_ready_event
+    bootstrap_ready_event = asyncio.Condition()
+    async with bootstrap_ready_event:
+        if node.id == 0:
+            # Add himself to ring
+            node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key)
 
-        # print("Registered Bootstrap node to ring")  # print("Registered Bootstrap node to ring")
-        transaction = Transaction(
-            sender_address='0',
-            receiver_address=node.wallet.public_key,
-            type_of_transaction='coin',
-            amount=total_bcc,
-            nonce=1,
-            message=None
-        )
+            # print("Registered Bootstrap node to ring")  # print("Registered Bootstrap node to ring")
+            transaction = Transaction(
+                sender_address='0',
+                receiver_address=node.wallet.public_key,
+                type_of_transaction='coin',
+                amount=total_bcc,
+                nonce=1,
+                message=None
+            )
+            
+            # node.transaction_pool.append(transaction)
+            node.wallet.balance += total_bcc
+
+            # print("Genesis transaction added to transaction pool")
+            genesis_block = Block(1,'1')
         
-        # node.transaction_pool.append(transaction)
-        node.wallet.balance += total_bcc
+            genesis_block.validator = 0
+            genesis_block.transactions.append(transaction)
+            node.chain.add_block(genesis_block)
+            # print("Genesis block added to chain")
+            print("Bootstrap node waiting for other nodes to be ready...")
+            await bootstrap_ready_event.wait()
+            #await bootstrap_ready_event.wait()
+            print("Bootstrap node proceeding...")
+            await node.send_initial_bcc()
 
-        # print("Genesis transaction added to transaction pool")
-        genesis_block = Block(1,'1')
-      
-        genesis_block.validator = 0
-        genesis_block.transactions.append(transaction)
-        node.chain.add_block(genesis_block)
-        # print("Genesis block added to chain")
-
-
-
-    else: 
-        # Gather all unicast tasks
-        unicast_tasks = [node.unicast_node(bootstrap_node), send_websocket_request('init_account_space', {}, node.ip, node.port)]
-        await asyncio.gather(*unicast_tasks)
+        else: 
+            # Gather all unicast tasks
+            unicast_tasks = [node.unicast_node(bootstrap_node), send_websocket_request('init_account_space', {}, node.ip, node.port)]
+            await asyncio.gather(*unicast_tasks)
+            data = await send_websocket_request('get_ring_length', {}, node.ip, node.port)
+            print("Ring length: ", data['ring_len'])
+            if data['ring_len'] == total_nodes: #TODO: may need better condition
+                bootstrap_ready_event.notify_all()
+                #bootstrap_ready_event.set()
+                print("Last node is ready")
 
     
 async def send_init_bcc():
@@ -196,6 +209,8 @@ async def handler(websocket):
             await websocket.send(json.dumps(last_validated_block))
           
 
+        elif data['action'] == 'get_ring_length':
+            await websocket.send(json.dumps({'ring_len': len(node.ring)}))
    
 
         elif data['action'] == 'update_soft_state':
@@ -334,7 +349,9 @@ async def main():
         print(f"Server started at ws://{IP_ADDRESS}:{PORT}")
         
         await register_node()  # Register the node with the bootstrap node
-        await send_init_bcc()  # Send the initial BCC to the node
+        #data = await send_websocket_request('get_ring_length', {}, bootstrap_node.ip, bootstrap_node.port)
+        #if PORT == os.getenv('BOOTSTRAP_PORT', '8000'): #if data['ring_len'] == total_nodes:
+        #await send_init_bcc()  # Send the initial BCC to the node
         await asyncio.Future()  # This will keep the server running indefinitely
 
 # Run the server
