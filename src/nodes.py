@@ -164,13 +164,19 @@ class Node:
 
     async def update_balance(self):
         transaction_pool_copy = self.transaction_pool.copy()
-        fees_sum = 0
         for trans in transaction_pool_copy:
             if any(trans.transaction_id == transaction.transaction_id for transaction in self.chain.blocks[-1].transactions):
+                
                 flag = 1 if trans.type_of_transaction == 'coin' and (self.account_space[trans.sender_address]['id']!= '0' or trans.nonce >= len(self.ring)) else 0 #bootstrap node isn't charged a fee when executing the genesis transactions
+                
+                if self.chain.blocks[-1].validator == self.wallet.public_key:
+                    if trans.type_of_transaction == 'coin' and trans.receiver_address != '0':
+                        self.wallet.balance += flag * 0.03 * int(trans.to_dict()['amount'])
+                    elif trans.type_of_transaction == 'message':
+                        self.wallet.balance += int(trans.to_dict()['amount'])
+                
                 if trans.sender_address == self.wallet.public_key and trans.receiver_address != '0': #regural transaction
                     self.wallet.balance -= int(trans.to_dict()['amount']) * (1 + flag * 0.03)
-                    fees_sum += flag * 0.03 * int(trans.to_dict()['amount'])
                 
                 elif trans.sender_address == self.wallet.public_key and trans.receiver_address == '0': #transaction is stake(amount)
                     self.wallet.balance += self.stake_amount
@@ -178,15 +184,14 @@ class Node:
                     self.wallet.balance -= self.stake_amount
 
                 if trans.receiver_address == self.wallet.public_key:
-                    if trans.type_of_transaction == 'message': #message 
-                        fees_sum += int(trans.to_dict()['amount'])
-                    else: #regular transaction
+                    if trans.type_of_transaction == 'coin': #regular transaction
                         self.wallet.balance += int(trans.to_dict()['amount'])
                     
                 # Remove the transaction from the original transaction_pool
                 self.transaction_pool.remove(trans)
-
-        return fees_sum
+        
+        if self.chain.blocks[-1].validator == self.wallet.public_key:
+            self.account_space[self.wallet.public_key]['balance'] = self.wallet.balance
     
 
     async def update_soft_state(self,fees_sum):
@@ -305,7 +310,7 @@ class Node:
     
         print("Responses from self:", response)
 
-       
+
         for ring_node in self.ring:
             if ring_node['id'] != self.id:
                 await send_websocket_request('update_soft_state', self.account_space, ring_node['ip'], ring_node['port'])
@@ -339,8 +344,8 @@ class Node:
 
         if self.id == validator['id']:
         
-            self.wallet.balance = self.account_space[self.wallet.public_key]['balance']
-            self.stake_amount = self.account_space[self.wallet.public_key]['stake']
+            # self.wallet.balance = self.account_space[self.wallet.public_key]['balance']
+            # self.stake_amount = self.account_space[self.wallet.public_key]['stake']
 
             await self.broadcast_block(self.current_block)
     

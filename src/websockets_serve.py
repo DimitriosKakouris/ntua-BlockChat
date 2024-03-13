@@ -312,8 +312,9 @@ async def handler(websocket):
                 print(f'I am as node {node.id} in new_block and validated')
                 node.chain.add_block(Block.from_dict(data['data']))
                 node.current_block = None
-                fees_sum = await node.update_balance()
-                await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
+                await node.update_balance()
+                #await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
+                await websocket.send(json.dumps({'status':200,'message':'Block added to chain', 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
 
 
 
