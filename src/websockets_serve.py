@@ -174,7 +174,8 @@ async def handler(websocket):
                 await websocket.send(json.dumps({'message': "The signature is not valid or not enough balance"}))
 
         elif data['action'] == 'get_balance':
-            balance = node.wallet.balance
+            balance = node.account_space[node.wallet.public_key]['balance']
+            #balance = node.wallet.balance
             wallet_address = node.wallet.public_key
             node_id = node.id
 
@@ -218,10 +219,10 @@ async def handler(websocket):
                         'ip': ring_node['ip'],
                         'id': ring_node['id'],
                         'port': ring_node['port'],
-                        'balance': 3000,
-                        'valid_balance': 3000,
+                        'balance': total_nodes * 1000,
+                        #'valid_balance': 3000,
                         'stake': 0,
-                        'valid_stake': 0
+                        #'valid_stake': 0
                     }
                 else:
                     node.account_space[ring_node['public_key']] = {
@@ -229,9 +230,9 @@ async def handler(websocket):
                         'id': ring_node['id'],
                         'port': ring_node['port'],
                         'balance': 1000,
-                        'valid_balance': 1000,
+                        #'valid_balance': 1000,
                         'stake': 0,
-                        'valid_stake': 0
+                        #'valid_stake': 0
                     }
             await websocket.send(json.dumps({'message': "Account space initialized"}))
 

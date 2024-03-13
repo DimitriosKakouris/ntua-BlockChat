@@ -4,6 +4,11 @@ from wallet import Wallet
 from block import Block
 from wsmanager import send_websocket_request, send_websocket_request_unique
 import asyncio
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+total_nodes = int(os.getenv('TOTAL_NODES', 5))
 
 
 class Node:
@@ -102,10 +107,10 @@ class Node:
                 'id' : id,
                 "ip": ip,
                 "port": port,
-                "balance": 3000,
-                "valid_balance":3000,
+                "balance": total_nodes * 1000,
+                #"valid_balance":3000,
                 "stake": 0,
-                "valid_stake": 0
+                #"valid_stake": 0
             }
         else:
             self.account_space[public_key] = {

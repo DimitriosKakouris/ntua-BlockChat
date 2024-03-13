@@ -4,7 +4,10 @@ import json
 from Crypto.Hash import SHA256
 from transaction import Transaction
 from wsmanager import send_websocket_request
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
+block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
 
 class Block:
     def __init__(self, index, previous_hash):
@@ -14,7 +17,7 @@ class Block:
         self.transactions = []
         self.current_hash = self.hash_block()
         self.validator = None
-        self.capacity = 2
+        self.capacity = block_capacity
 
 
     def add_transaction(self, transaction):
@@ -65,7 +68,7 @@ class Block:
         block.transactions = [Transaction.from_dict(t) for t in data['transactions']]
         block.current_hash = data['hash']
         block.validator = data['validator']
-        block.capacity = 2
+        block.capacity = block_capacity
 
         return block
 

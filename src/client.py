@@ -4,7 +4,8 @@ import asyncio
 from websockets_serve import send_websocket_request
 import json
 
-
+from dotenv import load_dotenv
+load_dotenv()
 ip_address = os.getenv('IP')
 port = os.getenv('PORT')
 
@@ -16,17 +17,30 @@ address = f'ws://{ip_address}:{port}'
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+def prompt_with_interrupt(questions):
+    try:
+        return inquirer.prompt(questions)
+    except KeyboardInterrupt:
+        return None  # Indicate that an interrupt occurred
+
+
 # Command Line Interface client
 async def client():
     clear_console()
     while True:
+        #try:
         menu = [ 
             inquirer.List('menu', 
             message= "BlockChat Client", 
             choices= ['New Transaction', 'New Message','Add Stake', 'View last block', 'Show balance', 'Help', 'Exit'], 
             ),
         ]
-        choice = inquirer.prompt(menu)['menu']
+        choice = prompt_with_interrupt(menu)
+        if choice is None:
+            print("\nReturning to main menu...")
+            continue
+        #choice = inquirer.prompt(menu)['menu']
+        choice = choice['menu']
         clear_console()
 
         if choice == 'New Transaction':
@@ -34,14 +48,19 @@ async def client():
                 inquirer.Text(name='receiver', message='What is the Receiver ID?'),
                 inquirer.Text(name='amount', message='How many BlockChat Coins to send?'),
             ]
-            answers = inquirer.prompt(questions)
-             # Read the receiver ID from the text file
+            answers = prompt_with_interrupt(questions)
+            if answers is None:
+                print("\nReturning to main menu...")
+                continue
+            #answers = inquirer.prompt(questions)
+            
+            # Read the receiver ID from the text file
             # with open(answers['receiver'], 'r') as file:
             #     receiver = file.read().strip()
             #     receiver = receiver.replace('\\n', '\n')
 
             receiver = answers['receiver']
-             # Send transaction request
+            # Send transaction request
             transaction_data = {'receiver': receiver, 'amount': answers['amount']}
             response = await send_websocket_request('new_transaction', transaction_data, ip_address, port)
             print(response)
@@ -51,24 +70,32 @@ async def client():
                 inquirer.Text(name='receiver', message='What is the Receiver ID?'),
                 inquirer.Text(name='message', message='What is the message?'),
             ]
-            answers = inquirer.prompt(questions)
+            #answers = inquirer.prompt(questions)
+            answers = prompt_with_interrupt(questions)
+            if answers is None:
+                print("\nReturning to main menu...")
+                continue
             # Send message request
             # with open(answers['receiver'], 'r') as file:
             #     receiver = file.read().strip()
             #     receiver = receiver.replace('\\n', '\n'
 
             receiver = answers['receiver']
-             # Send transaction request
+            # Send transaction request
             transaction_data = {'receiver': receiver, 'message': answers['message']}
             response = await send_websocket_request('new_message', transaction_data, ip_address, port)
             print(response)
             # response = await send_websocket_request('new_message', answers, ip_address, port)
-          
+        
         elif choice == 'Add Stake':
             questions = [
                 inquirer.Text(name='amount', message='How many BlockChat Coins to stake?'),
             ]
-            answers = inquirer.prompt(questions)
+            #answers = inquirer.prompt(questions)
+            answers = prompt_with_interrupt(questions)
+            if answers is None:
+                print("\nReturning to main menu...")
+                continue
             # Send stake request
             response = await send_websocket_request('stake', {'amount': answers['amount']}, ip_address, port)
             print(response)
@@ -96,6 +123,11 @@ async def client():
 
         input("Press enter to continue...")
         clear_console()
+    # except KeyboardInterrupt:
+    #     # Clear the KeyboardInterrupt and return to the start of the loop
+    #     print("\nInterrupt detected. Returning to the main menu...")
+    #     clear_console()
+    #     continue  # This will jump to the beginning of the while loop
 
 if __name__ == "__main__":
     asyncio.run(client())
