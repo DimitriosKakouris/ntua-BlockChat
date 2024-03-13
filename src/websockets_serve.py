@@ -42,10 +42,11 @@ if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
 
 #bootstrap_ready_event = asyncio.Event()
 # Register node to the cluster
+bootstrap_ready_event = asyncio.Event()
 async def register_node():
     #global bootstrap_ready_event
-    bootstrap_ready_event = asyncio.Condition()
-    async with bootstrap_ready_event:
+    # bootstrap_ready_event = asyncio.Condition()
+    # async with bootstrap_ready_event:
         if node.id == 0:
             # Add himself to ring
             node.register_node_to_ring(node.id, node.ip, node.port, node.wallet.public_key)
@@ -83,8 +84,7 @@ async def register_node():
             data = await send_websocket_request('get_ring_length', {}, node.ip, node.port)
             print("Ring length: ", data['ring_len'])
             if data['ring_len'] == total_nodes: #TODO: may need better condition
-                bootstrap_ready_event.notify_all()
-                #bootstrap_ready_event.set()
+                await send_websocket_request('last_node_ready', {}, bootstrap_node['ip'], bootstrap_node['port'])
                 print("Last node is ready")
 
     
@@ -94,62 +94,40 @@ async def send_init_bcc():
         await node.send_initial_bcc()
 
 
-connected_nodes = []
 
 async def handler(websocket):
-    global connected_nodes
-  
-
-    
+   
     print(f"Connection set: {connections}")
 
     async for message in websocket:
         data = json.loads(message)
         
+        
 
-        if data['action'] == 'register_node':
-            # Create a Condition
-            node_joined_condition = asyncio.Condition()
+        if data['action'] == 'last_node_ready':
+            print("Last node is ready, proceeding...")
+            bootstrap_ready_event.set()  # Signal the event
+            await websocket.send(json.dumps({'message': "Last node is ready endpoint triggered"}))
+        
 
-            # In the 'register_node' action handler
-            async with node_joined_condition:
-                new_node_data = data.get('data')
-                connected_nodes.append(new_node_data)
+        elif data['action'] == 'register_node':
+            node_data = data['data']
+        
+            bootstrap_node.register_node_to_ring(len(bootstrap_node.ring), node_data['ip'], node_data['port'], node_data['public_key'])
 
-                # If 4 nodes have joined, notify all tasks waiting on the Condition
-                if len(connected_nodes) >= 2:
-                    node_joined_condition.notify_all()
-
-            # In the part of your code that needs to wait for 4 nodes to join
-            async with node_joined_condition:
-                while len(connected_nodes) < 2:
-                    await node_joined_condition.wait()
-
-
-            # print(f"{len(connected_nodes)} nodes have joined the network")
-
-            # Register the nodes to the ring
-            for i, node_data in enumerate(connected_nodes):
-                bootstrap_node.register_node_to_ring(i+1, node_data['ip'], node_data['port'], node_data['public_key'])
+            if len(bootstrap_node.ring) == total_nodes:
                 
+                for ring_node in bootstrap_node.ring:
+                    if ring_node['id'] != 0:
+                        await bootstrap_node.share_chain(ring_node)
+                        await bootstrap_node.share_ring(ring_node)
+                        await bootstrap_node.share_account_space(ring_node)
+                        
+                        
+                        
 
-            # print("Ring:", bootstrap_node.ring)
-            # Share the chain and the ring
-            for ring_node in bootstrap_node.ring:
-                if ring_node['id'] != 0:
-                    # print("ring_node:", ring_node['id'])
-                    await bootstrap_node.share_chain(ring_node)
-                    # In the share_ring method
-                    # print(f"Sharing ring with node {ring_node['id']}")
-                    await bootstrap_node.share_ring(ring_node)
-                    await bootstrap_node.share_account_space(ring_node)
-                    # await send_websocket_request('init_account_space', {}, ring_node['ip'], ring_node['port'])
-                  
-                   
-
-            # Reset the connected nodes
-            connected_nodes = []
-            await websocket.send(json.dumps({'status' :'Entered the network','id': node.id}))
+               
+            await websocket.send(json.dumps({'status' : 'Node with id ' + str(len(bootstrap_node.ring)) + ' registered'}))
 
            
            
@@ -196,7 +174,6 @@ async def handler(websocket):
                 await websocket.send(json.dumps({'message': "The signature is not valid or not enough balance"}))
 
         elif data['action'] == 'get_balance':
-            #print("Getting balance")
             balance = node.wallet.balance
             wallet_address = node.wallet.public_key
             node_id = node.id
@@ -204,7 +181,6 @@ async def handler(websocket):
             await websocket.send(json.dumps({'Node ID':node_id,'chain':node.chain.to_dict(),'wallet_address':wallet_address,'balance': balance, 'stake':node.stake_amount}))
 
         elif data['action'] == 'view_last_transactions':
-
             last_validated_block = node.chain.blocks[-1].view_block()
             await websocket.send(json.dumps(last_validated_block))
           
@@ -230,6 +206,8 @@ async def handler(websocket):
             # print(f"Node {node.id} received 'update_ring' action")
 
             await websocket.send(json.dumps({'message': "Ring updated"}))
+
+
 
         elif data['action'] == 'init_account_space':
 
@@ -306,9 +284,9 @@ async def handler(websocket):
 
                
                 if res['status'] == 200 and res['message'] == 'Block is full':
-                     await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
                      await node.mint_block()
-                     
+                     await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
+ 
                     
                 elif res['status'] == 200 and res['message'] == 'Transaction added to block':
                     await websocket.send(json.dumps({'valid':True,'message':'Transaction added to block'}))
@@ -323,8 +301,11 @@ async def handler(websocket):
 
         elif data['action'] == 'new_block':
             # if node.chain.blocks[-1].current_hash != data['data']['hash']:
+            print(f'I am as node {node.id} in new_block')
             if await node.validate_block(Block.from_dict(data['data'])):
+                print(f'I am as node {node.id} in new_block and validated')
                 node.chain.add_block(Block.from_dict(data['data']))
+                node.current_block = None
                 fees_sum = await node.update_balance()
                 await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum}))
 
@@ -345,13 +326,11 @@ async def handler(websocket):
 
 # Start the WebSocket server
 async def main():
-    async with websockets.serve(handler, IP_ADDRESS, PORT):
+    async with websockets.serve(handler, IP_ADDRESS, PORT,ping_interval=None):
         print(f"Server started at ws://{IP_ADDRESS}:{PORT}")
         
         await register_node()  # Register the node with the bootstrap node
-        #data = await send_websocket_request('get_ring_length', {}, bootstrap_node.ip, bootstrap_node.port)
-        #if PORT == os.getenv('BOOTSTRAP_PORT', '8000'): #if data['ring_len'] == total_nodes:
-        #await send_init_bcc()  # Send the initial BCC to the node
+     
         await asyncio.Future()  # This will keep the server running indefinitely
 
 # Run the server

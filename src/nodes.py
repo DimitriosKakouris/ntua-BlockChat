@@ -2,9 +2,8 @@ from blockchain import Blockchain
 from transaction import Transaction
 from wallet import Wallet
 from block import Block
-from wsmanager import send_websocket_request
+from wsmanager import send_websocket_request, send_websocket_request_unique
 import asyncio
-import random
 
 
 class Node:
@@ -40,24 +39,7 @@ class Node:
      
         return node
 
-       
-
-   
-    # def update_balance(self, public_key, balance):
-    #     if public_key not in self.account_space:
-    #         self.account_space[public_key] = {'balance': balance}
-    #     else:
-    #         self.account_space[public_key]['balance'] = balance
     
-
-    
-
-    # def get_balance(self, public_key):
-    #     if public_key in self.account_space:
-    #         return self.account_space[public_key]['balance']
-    #     else:
-    #         return None
-        
 
     async def stake(self, amount):
         """
@@ -66,13 +48,7 @@ class Node:
         """
         return await self.create_transaction('0', "coin", amount)
 
-        # if not stake_trasaction["success"]:
-        #     return False
-        
-        # else:
-        #     #self.stake = amount
-        #     return True
-    
+ 
 
     async def validate_transaction(self,transaction):
         """
@@ -89,20 +65,17 @@ class Node:
         stake_flag = 1 if transaction.receiver_address == '0' else 0
         if int(transaction.amount) * (1 + flag * 0.03)  > int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag:
             return False
-        # print('Transaction:', transaction.to_dict())
-        # print('Balance:', int(sender_balance))
-        # print('Transaction amount+fees:', int(transaction.amount) * (1 + flag * 0.03))
+    
      
         return True
         
     async def validate_block(self, block):
-        # seed = int(self.previous_hash, 16)  # Convert hex hash to an integer
-        # random.seed(seed)
+    
         validator = await block.select_validator(self)
-        
     
         return (block.previous_hash == self.chain.blocks[-1].current_hash) and (block.validator == validator['pk'])
     
+
     def validate_chain(self, blocks):
         """Validates all the blocks of a chain"""
 
@@ -147,12 +120,6 @@ class Node:
     async def create_transaction(self, receiver_public_key, type_of_transaction, amount, message=None):
         """Creates a new transaction, directly adjusting account balances."""
 
-        # # Check if the account has enough balance:
-        # if type_of_transaction == 'coin' and self.wallet.balance < int(amount):
-        #     return {"Not enough balance"}
-        # elif type_of_transaction == 'message' and self.wallet.balance < len(message):
-        #     return {"Not enough balance"}
-
         # Create the transaction
         transaction = Transaction(
             sender_address=self.wallet.public_key,
@@ -172,8 +139,6 @@ class Node:
         if res['valid']:
             self.wallet.nonce += 1
             return True
-
-           
         
         else:
             print("Invalid transaction")
@@ -185,23 +150,9 @@ class Node:
         print("Ring:", self.ring)
         for ring_node in self.ring:
             if ring_node['id'] != 0:
-                # print("Sending coins to node", ring_node['id'])
-
                 if await self.create_transaction(ring_node['public_key'],'coin',1000):
                     print(f"Node {ring_node['id']} successfully received 1000 BCCs")
 
-
-                        #await websocket.send(json.dumps({'message' :f"Node {node.id} successfully received 1000 BCCs"}))
-    
-    
-       
-    
-
-    # async def trigger_fees(self, fees_sum):
-    #     for ring_node in self.ring:
-    #             if ring_node['public_key'] == validator:
-    #                 await send_websocket_request('get_fees', {'fees':fees_sum},  ring_node['ip'], ring_node['port'])
-    #                 break
 
 
 
@@ -297,7 +248,10 @@ class Node:
     async def send_transaction(self, node, transaction):
         """Asynchronously sends a transaction to a single node via WebSocket."""
         print("I am in 'send_transaction'")
-        response = await send_websocket_request('update_block', transaction.to_dict(),  node['ip'], node['port'])
+        if self.id == node['id']:
+            response = await send_websocket_request_unique('update_block', transaction.to_dict(), self.ip, self.port)
+        else:
+            response = await send_websocket_request('update_block', transaction.to_dict(),  node['ip'], node['port'])
         
         return response
 
@@ -309,6 +263,7 @@ class Node:
         tasks = [self.send_transaction(node, transaction) for node in self.ring]
 
         responses = await asyncio.gather(*tasks)
+        print("Responses:", responses)  
 
         if any(res["message"] == "Transaction Invalid" for res in responses):
             
@@ -317,8 +272,9 @@ class Node:
         elif any(res["message"] == "Transaction added to block" for res in responses):
             return {'valid': True,'full': False}
         
-        elif any(res["message"] == "Block is full" for res in responses):
-            return {'valid': True,'full': True}
+        for res in responses:
+            if res['message'] == "Block is full":
+                return {'valid': True, 'full': True}
         
        
 
@@ -334,7 +290,10 @@ class Node:
       
 
     async def send_block(self, node, block):
-        res = await send_websocket_request('new_block', block.to_dict(),  node['ip'], node['port'])
+        # if self.id == node['id']:
+        res= await send_websocket_request_unique('new_block', block.to_dict(), node['ip'], node['port'])
+        # else:
+        #     res = await send_websocket_request('new_block', block.to_dict(),  node['ip'], node['port'])
         return res
     
 
@@ -344,9 +303,10 @@ class Node:
         responses = []
 
 
-        tasks = [self.send_block(node, block) for node in self.ring if node['id']]
+        tasks = [self.send_block(node, block) for node in self.ring]
+      
 
-        
+        print(f'I node {self.id} am broadcasting a block')
 
         responses = await asyncio.gather(*tasks)
         print("Responses:", responses)
@@ -357,43 +317,6 @@ class Node:
             else:
                 print("Block rejected by the network")
                 break
-
-        if await self.validate_block(block):
-            self.chain.add_block(block)
-            fees_sum = await self.update_balance()
-
-            self.wallet.balance += fees_sum 
-
-         
-            for ring_node in self.ring:
-                balance = 100
-                self.account_space[ring_node['public_key']]['balance'] = balance['balance']
-                self.account_space[ring_node['public_key']]['stake'] = balance['stake']
-
-            
-            for ring_node in self.ring:
-                if ring_node['id'] != self.id:
-                    await send_websocket_request('update_soft_state', self.account_space, ring_node['ip'], ring_node['port'])
-
-
-      
-               
-
-
-
-        # for response in responses:
-        #     if response['status'] == 200:
-               
-        #     #    print("Block accepted by the network")
-        #        for ring_node in self.ring:
-        #             await send_websocket_request('update_balance', {},  ring_node['ip'], ring_node['port'])
-                    
-        #        break
-            
-        #     else:
-        #         # print("Block rejected by the network")
-        #         break
-                    
 
    
     async def unicast_node(self, bootstrap_node):
