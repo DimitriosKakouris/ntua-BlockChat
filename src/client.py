@@ -28,7 +28,7 @@ def prompt_with_interrupt(questions):
 async def client():
     clear_console()
     while True:
-        #try:
+        #clear_console()
         menu = [ 
             inquirer.List('menu', 
             message= "BlockChat Client", 
@@ -39,7 +39,6 @@ async def client():
         if choice is None:
             print("\nReturning to main menu...")
             continue
-        #choice = inquirer.prompt(menu)['menu']
         choice = choice['menu']
         clear_console()
 
@@ -52,7 +51,6 @@ async def client():
             if answers is None:
                 print("\nReturning to main menu...")
                 continue
-            #answers = inquirer.prompt(questions)
             
             # Read the receiver ID from the text file
             # with open(answers['receiver'], 'r') as file:
@@ -70,7 +68,6 @@ async def client():
                 inquirer.Text(name='receiver', message='What is the Receiver ID?'),
                 inquirer.Text(name='message', message='What is the message?'),
             ]
-            #answers = inquirer.prompt(questions)
             answers = prompt_with_interrupt(questions)
             if answers is None:
                 print("\nReturning to main menu...")
@@ -91,7 +88,6 @@ async def client():
             questions = [
                 inquirer.Text(name='amount', message='How many BlockChat Coins to stake?'),
             ]
-            #answers = inquirer.prompt(questions)
             answers = prompt_with_interrupt(questions)
             if answers is None:
                 print("\nReturning to main menu...")
@@ -111,7 +107,6 @@ async def client():
             response = await send_websocket_request('get_balance', {}, ip_address, port)
             print("Balance:", response['balance'])
             print("Amount reserved for staking:", response['stake'])
-            #print(response)
 
         elif choice == 'Help':
             # Display help text
@@ -123,11 +118,6 @@ async def client():
 
         input("Press enter to continue...")
         clear_console()
-    # except KeyboardInterrupt:
-    #     # Clear the KeyboardInterrupt and return to the start of the loop
-    #     print("\nInterrupt detected. Returning to the main menu...")
-    #     clear_console()
-    #     continue  # This will jump to the beginning of the while loop
 
 if __name__ == "__main__":
     asyncio.run(client())

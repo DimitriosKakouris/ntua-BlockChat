@@ -229,7 +229,8 @@ async def handler(websocket):
                         'ip': ring_node['ip'],
                         'id': ring_node['id'],
                         'port': ring_node['port'],
-                        'balance': 1000,
+                        #'balance': 1000,
+                        'balance': 0,
                         #'valid_balance': 1000,
                         'stake': 0,
                         #'valid_stake': 0

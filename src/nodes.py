@@ -66,7 +66,7 @@ class Node:
     
         sender_balance = self.account_space[transaction.sender_address]['balance']
 
-        flag = 1 if transaction.type_of_transaction == 'coin' and (self.account_space[transaction.sender_address]['id']!= 0 or transaction.nonce >= len(self.ring) ) else 0
+        flag = 1 if transaction.type_of_transaction == 'coin' and (int(self.account_space[transaction.sender_address]['id'])!= 0 or transaction.nonce >= len(self.ring) ) else 0
         stake_flag = 1 if transaction.receiver_address == '0' else 0
         if int(transaction.amount) * (1 + flag * 0.03)  > int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag:
             return False
@@ -117,7 +117,8 @@ class Node:
                 'id' : id,
                 "ip": ip,
                 "port": port,
-                "balance": 1000,
+                #"balance": 1000,
+                "balance": 0,
                 "stake": 0,
             }
 
@@ -321,6 +322,7 @@ class Node:
         for ring_node in self.ring:
             if ring_node['id'] != self.id:
                 await send_websocket_request('update_soft_state', self.account_space, ring_node['ip'], ring_node['port'])
+        return True
             
 
    
