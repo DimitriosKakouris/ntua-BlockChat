@@ -320,7 +320,12 @@ async def handler(websocket):
 
             else:
                 await websocket.send(json.dumps({'status':400,'message':'Block Invalid'}))
-           
+
+        
+        elif data['action'] == 'get_last_block_timestamp':
+            timestamp = node.chain.blocks[-1].timestamp
+            await websocket.send(json.dumps({'timestamp':timestamp}))
+
      
         # elif data['action'] == 'get_fees':
 

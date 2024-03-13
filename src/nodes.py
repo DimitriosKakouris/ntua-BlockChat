@@ -6,6 +6,7 @@ from wsmanager import send_websocket_request, send_websocket_request_unique, sen
 import asyncio
 import os
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 total_nodes = int(os.getenv('TOTAL_NODES', 5))
@@ -348,6 +349,7 @@ class Node:
             # self.stake_amount = self.account_space[self.wallet.public_key]['stake']
 
             await self.broadcast_block(self.current_block)
+            #new_timestamp = time.time()
     
     async def add_transaction_to_block(self, transaction):
         """Adds a transaction to a block, check if minting is needed and update
