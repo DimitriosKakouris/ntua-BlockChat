@@ -32,7 +32,7 @@ async def client():
         menu = [ 
             inquirer.List('menu', 
             message= "BlockChat Client", 
-            choices= ['New Transaction', 'New Message','Add Stake', 'View last block', 'Show balance', 'Help', 'Exit'], 
+            choices= ['New Transaction', 'New Message','Add Stake', 'View last block','View Last Messages', 'Show balance', 'Help', 'Exit'], 
             ),
         ]
         choice = prompt_with_interrupt(menu)
@@ -99,6 +99,11 @@ async def client():
         elif choice == 'View last block':
             # Assuming you have a specific message format for this request
             response = await send_websocket_request('view_last_transactions', {}, ip_address, port)
+            print(json.dumps(response, indent=4))
+
+        elif choice == 'View Last Messages':
+          
+            response = await send_websocket_request('view_last_messages', {}, ip_address, port)
             print(json.dumps(response, indent=4))
             
         elif choice == 'Show balance':

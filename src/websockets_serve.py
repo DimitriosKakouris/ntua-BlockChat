@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from nodes import Node
 from block import Block
 from transaction import Transaction
-from wsmanager import send_websocket_request, connections
+from wsmanager import send_websocket_request
 
 
 
@@ -97,7 +97,6 @@ async def send_init_bcc():
 
 async def handler(websocket):
    
-    print(f"Connection set: {connections}")
 
     async for message in websocket:
         data = json.loads(message)
@@ -184,6 +183,11 @@ async def handler(websocket):
         elif data['action'] == 'view_last_transactions':
             last_validated_block = node.chain.blocks[-1].view_block()
             await websocket.send(json.dumps(last_validated_block))
+
+        elif data['action'] == 'view_last_messages':
+            last_validated_block = node.chain.blocks[-1].view_block()
+            messages = [transaction['message'] for transaction in last_validated_block['transactions'] if transaction['type_of_transaction'] == 'message' and transaction['recipient_address'] == node.wallet.public_key]
+            await websocket.send(json.dumps(messages))
           
 
         elif data['action'] == 'get_ring_length':
