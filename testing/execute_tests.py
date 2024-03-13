@@ -50,6 +50,7 @@ async def execute_transactions():
         f.write('Throughput: %f\n' %throughput)
         f.write('Block time: %f\n' %block_time)
         f.write('Capacity: %d\n' %block_capacity)
+        f.write('-----------------------------------')
         f.write('\n')
     
 
