@@ -263,62 +263,49 @@ class Node:
 
     async def broadcast_transaction(self, transaction):
         """Broadcasts a transaction to the network using WebSockets."""
-        tasks = []
-        responses = []
+      
 
-        tasks = [self.send_transaction(node, transaction) for node in self.ring]
+        for node in self.ring :
+            if self.id != node['id']:
+                asyncio.create_task(self.send_transaction(node, transaction))
+            else:
+                response = await self.send_transaction(node, transaction)
 
-        responses = await asyncio.gather(*tasks)
-        print("Responses:", responses)  
+       
+        print("Response from self:", response)  
 
-        if any(res["message"] == "Transaction Invalid" for res in responses):
+        if response["message"] == "Transaction Invalid" :
             
             return {'valid': False}
         
-        elif any(res["message"] == "Transaction added to block" for res in responses):
+        elif response["message"] == "Transaction added to block" :
             return {'valid': True,'full': False}
         
-        for res in responses:
-            if res['message'] == "Block is full":
-                return {'valid': True, 'full': True}
-     
+       
+        elif response["message"] == "Block is full" :
+            return {'valid': True,'full': True}
       
 
     async def send_block(self, node, block):
-        # if self.id == node['id']:
+   
         res= await send_websocket_request_unique('new_block', block.to_dict(), node['ip'], node['port'])
-        # else:
-        #     res = await send_websocket_request('new_block', block.to_dict(),  node['ip'], node['port'])
+     
         return res
     
 
     async def broadcast_block(self, block):
         """Broadcasts a block to the network using WebSockets."""
-        tasks = []
-        responses = []
-
-
-        tasks = [self.send_block(node, block) for node in self.ring]
-      
-
-        print(f'I node {self.id} am broadcasting a block')
-
-        responses = await asyncio.gather(*tasks)
-        print("Responses:", responses)
-
-        for res in responses:
-            if res['status'] == 200:
-                self.account_space[res['pk']]['balance'] = res['new_balance']
-                self.account_space[res['pk']]['stake'] = res['new_stake']
-                print(f'Validator wallet balance before: {self.wallet.balance}')
-                self.wallet.balance += res['fees']
-                print(f'Validator wallet balance after: {self.wallet.balance}')
-                
-                self.account_space[self.wallet.public_key]['balance'] += res['fees']
+     
+        for node in self.ring:
+            if node['id'] != self.id:
+                asyncio.create_task(self.send_block(node, block))
             else:
-                print("Block rejected by the network")
-                return False
+                response = await self.send_block(node, block)
 
+    
+        print("Responses from self:", response)
+
+       
         for ring_node in self.ring:
             if ring_node['id'] != self.id:
                 await send_websocket_request('update_soft_state', self.account_space, ring_node['ip'], ring_node['port'])
@@ -351,6 +338,9 @@ class Node:
         await self.chain.mint_block(self)
 
         if self.id == validator['id']:
+        
+            self.wallet.balance = self.account_space[self.wallet.public_key]['balance']
+            self.stake_amount = self.account_space[self.wallet.public_key]['stake']
 
             await self.broadcast_block(self.current_block)
     
