@@ -161,7 +161,7 @@ class Node:
         fees_sum = 0
         for trans in transaction_pool_copy:
             if any(trans.transaction_id == transaction.transaction_id for transaction in self.chain.blocks[-1].transactions):
-                flag = 1 if trans.type_of_transaction == 'coin' and (self.account_space[trans.sender_address]['id']!= 0 or trans.nonce >= len(self.ring)) else 0 #bootstrap node isn't charged a fee when executing the genesis transactions
+                flag = 1 if trans.type_of_transaction == 'coin' and (self.account_space[trans.sender_address]['id']!= '0' or trans.nonce >= len(self.ring)) else 0 #bootstrap node isn't charged a fee when executing the genesis transactions
                 if trans.sender_address == self.wallet.public_key and trans.receiver_address != '0': #regural transaction
                     self.wallet.balance -= int(trans.to_dict()['amount']) * (1 + flag * 0.03)
                     fees_sum += flag * 0.03 * int(trans.to_dict()['amount'])
