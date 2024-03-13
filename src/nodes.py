@@ -280,18 +280,7 @@ class Node:
         for res in responses:
             if res['message'] == "Block is full":
                 return {'valid': True, 'full': True}
-        
-       
-
-
-
-       
-
-        # print("Responses:", responses)
-
      
-        # await send_websocket_request('update_balance', {},  self.ip, self.port)
-        # # Check responses for validation and receipt acknowledgment
       
 
     async def send_block(self, node, block):
@@ -318,10 +307,21 @@ class Node:
 
         for res in responses:
             if res['status'] == 200:
-               self.wallet.balance += res['fees']
+                self.account_space[res['pk']]['balance'] = res['new_balance']
+                self.account_space[res['pk']]['stake'] = res['new_stake']
+                print(f'Validator wallet balance before: {self.wallet.balance}')
+                self.wallet.balance += res['fees']
+                print(f'Validator wallet balance after: {self.wallet.balance}')
+                
+                self.account_space[self.wallet.public_key]['balance'] += res['fees']
             else:
                 print("Block rejected by the network")
-                break
+                return False
+
+        for ring_node in self.ring:
+            if ring_node['id'] != self.id:
+                await send_websocket_request('update_soft_state', self.account_space, ring_node['ip'], ring_node['port'])
+            
 
    
     async def unicast_node(self, bootstrap_node):
@@ -333,7 +333,7 @@ class Node:
                 'port': self.port,
                 'public_key': self.wallet.public_key
         }
-        response = await send_websocket_request('register_node', node_info, bootstrap_node['ip'], bootstrap_node['port'])
+        await send_websocket_request('register_node', node_info, bootstrap_node['ip'], bootstrap_node['port'])
         # print("I have unicasted to the bootstrap node")
 
         # if response['status'] == 'Entered the network':

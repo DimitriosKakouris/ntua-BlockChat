@@ -308,7 +308,7 @@ async def handler(websocket):
                 node.chain.add_block(Block.from_dict(data['data']))
                 node.current_block = None
                 fees_sum = await node.update_balance()
-                await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum}))
+                await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
 
 
 
@@ -316,12 +316,12 @@ async def handler(websocket):
                 await websocket.send(json.dumps({'status':400,'message':'Block Invalid'}))
            
      
-        elif data['action'] == 'get_fees':
+        # elif data['action'] == 'get_fees':
 
-            fees = data['data']['fees']
-            node.wallet.balance += fees
+        #     fees = data['data']['fees']
+        #     node.wallet.balance += fees
 
-            await websocket.send(json.dumps({'message': "Fees received"}))
+        #     await websocket.send(json.dumps({'message': "Fees received"}))
 
 
 
