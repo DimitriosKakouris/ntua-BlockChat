@@ -27,7 +27,8 @@ def prompt_with_interrupt(questions):
 # Command Line Interface client
 async def client():
     clear_console()
-    while True:
+    running = True
+    while running:
         #clear_console()
         menu = [ 
             inquirer.List('menu', 
@@ -120,9 +121,11 @@ async def client():
         elif choice == 'Exit':
             print("Exiting...")
             break
-
-        input("Press enter to continue...")
-        clear_console()
+        if choice != 'Exit':
+            input("Press enter to continue...")
+            clear_console()
+        else:
+            running = False
 
 if __name__ == "__main__":
     asyncio.run(client())
