@@ -1,10 +1,11 @@
 from asyncio import Lock
 import websockets
 import json
+import asyncio
 
 connections = {}
 connections_self_update = {}
-
+lock = asyncio.Lock()
 
 async def send_websocket_request(action, data, ip, port):
     # Define the WebSocket URL
@@ -23,12 +24,15 @@ async def send_websocket_request(action, data, ip, port):
     }
     print(f"Sending request to {ws_url} with {websocket}: {request}")
 
-    # Send the request
-    await websocket.send(json.dumps(request))
+     # Acquire the lock
+    async with lock:
+        # Send the request
+        await websocket.send(json.dumps(request))
 
-    # Wait for a response from the server
-    response = await websocket.recv()
-    print(f"Response from {ws_url}: {response} with request {request}")
+        # Wait for a response from the server
+        response = await websocket.recv()
+        print(f"Response from {ws_url}: {response} with request {request}")
+
 
     # try:
     return json.loads(response)

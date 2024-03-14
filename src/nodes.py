@@ -274,8 +274,11 @@ class Node:
         for node in self.ring :
             if self.id != node['id']:
                 asyncio.create_task(self.send_transaction(node, transaction))
-            else:
-                response = await self.send_transaction(node, transaction)
+            # else:
+                
+        for node in self.ring:
+            if self.id == node['id']:
+                 response = await self.send_transaction(node, transaction)
 
        
         print("Response from self:", response)  
