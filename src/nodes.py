@@ -2,7 +2,7 @@ from blockchain import Blockchain
 from transaction import Transaction
 from wallet import Wallet
 from block import Block
-from wsmanager import send_websocket_request, send_websocket_request_unique, send_websocket_request_self_update
+from wsmanager import send_websocket_request, send_websocket_request_unique, send_websocket_request_update
 import asyncio
 import os
 from dotenv import load_dotenv
@@ -260,10 +260,10 @@ class Node:
     async def send_transaction(self, node, transaction):
         """Asynchronously sends a transaction to a single node via WebSocket."""
         print("I am in 'send_transaction'")
-        if self.id == node['id']:
-            response = await send_websocket_request_unique('update_block', transaction.to_dict(), self.ip, self.port)
-        else:
-            response = await send_websocket_request('update_block', transaction.to_dict(),  node['ip'], node['port'])
+        # if self.id == node['id']:
+            # response = await send_websocket_request_self_update('update_block', transaction.to_dict(), self.ip, self.port)
+        # else:
+        response = await send_websocket_request_unique('update_block', transaction.to_dict(),  node['ip'], node['port'])
         
         return response
 
@@ -272,9 +272,10 @@ class Node:
       
 
         for node in self.ring :
-            if self.id != node['id']:
-                asyncio.create_task(self.send_transaction(node, transaction))
-            # else:
+                if self.id != node['id']:
+         
+                     asyncio.create_task(self.send_transaction(node, transaction))
+         
                 
         for node in self.ring:
             if self.id == node['id']:

@@ -5,8 +5,11 @@ import asyncio
 
 connections = {}
 connections_self_update = {}
-lock = asyncio.Lock()
+# lock = asyncio.Lock()
+# lock_update = asyncio.Lock()
 
+
+# locks =  {}
 async def send_websocket_request(action, data, ip, port):
     # Define the WebSocket URL
     ws_url = f"ws://{ip}:{port}"
@@ -17,12 +20,20 @@ async def send_websocket_request(action, data, ip, port):
         websocket = await websockets.connect(ws_url,ping_interval=None)
         connections[ws_url] = websocket
 
+
+    #   # Get the lock for this WebSocket, or create a new one if it doesn't exist
+    # lock = locks.get(ws_url)
+    # if lock is None:
+    #     lock = asyncio.Lock()
+    #     locks[ws_url] = lock
+
+
     # Define the request
     request = {
         'action': action,
         'data': data
     }
-    print(f"Sending request to {ws_url} with {websocket}: {request}")
+    # print(f"Sending request to {ws_url} with {websocket}: {request}")
 
     #  # Acquire the lock
     # async with lock:
@@ -31,38 +42,45 @@ async def send_websocket_request(action, data, ip, port):
 
     # Wait for a response from the server
     response = await websocket.recv()
-    print(f"Response from {ws_url}: {response} with request {request}")
+        # print(f"Response from {ws_url}: {response} with request {request}")
 
 
     # try:
     return json.loads(response)
    
 
-
-async def send_websocket_request_self_update(action, data, ip, port):
+locks_update = {}
+async def send_websocket_request_update(action, data, ip, port):
     # Define the WebSocket URL
     ws_url = f"ws://{ip}:{port}"
 
     # Get the WebSocket connection for this URL, or create a new one if it doesn't exist
-    websocket = connections.get(ws_url)
+    websocket = connections_self_update.get(ws_url)
     if websocket is None or websocket.closed:
         websocket = await websockets.connect(ws_url,ping_interval=None)
         connections_self_update[ws_url] = websocket
+
+
+      # Get the lock for this WebSocket, or create a new one if it doesn't exist
+    lock = locks_update.get(ws_url)
+    if lock is None:
+        lock = asyncio.Lock()
+        locks_update[ws_url] = lock
 
     # Define the request
     request = {
         'action': action,
         'data': data
-    }
-    print(f"Sending request to {ws_url} with {websocket}: {request}")
+     }
+    # print(f"Sending request to {ws_url} with {websocket}: {request}")
 
-    # async with lock:
-    # Send the request
-    await websocket.send(json.dumps(request))
+    async with lock:
+    # # Send the request
+        await websocket.send(json.dumps(request))
 
-    # Wait for a response from the server
-    response = await websocket.recv()
-    print(f"Response from {ws_url}: {response} with request {request}")
+        # Wait for a response from the server
+        response = await websocket.recv()
+    # print(f"Response from {ws_url}: {response} with request {request}")
 
     
     return json.loads(response)
