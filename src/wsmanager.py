@@ -56,6 +56,7 @@ async def send_websocket_request_self_update(action, data, ip, port):
     }
     print(f"Sending request to {ws_url} with {websocket}: {request}")
 
+    # async with lock:
     # Send the request
     await websocket.send(json.dumps(request))
 

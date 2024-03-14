@@ -7,6 +7,7 @@ from nodes import Node
 from block import Block
 from transaction import Transaction
 from wsmanager import send_websocket_request
+import execute_tests
 
 
 
@@ -77,6 +78,8 @@ async def register_node():
             #await bootstrap_ready_event.wait()
             print("Bootstrap node proceeding...")
             await node.send_initial_bcc()
+            print('After send_initial_bcc')
+            await execute_tests.execute_transactions()
 
         else: 
             # Gather all unicast tasks
@@ -346,9 +349,9 @@ async def main():
         
         await register_node()  # Register the node with the bootstrap node
 
-        await initialization_event.wait()
+        # await initialization_event.wait()
     
-        await execute_tests.execute_transactions()
+        # await execute_tests.execute_transactions()
      
         await asyncio.Future()  # This will keep the server running indefinitely
 

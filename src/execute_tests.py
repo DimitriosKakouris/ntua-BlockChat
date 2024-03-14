@@ -1,4 +1,5 @@
 import asyncio
+import os
 import time
 from test_websockets_serve import node, IP_ADDRESS, PORT, total_nodes
 from wsmanager import send_websocket_request
@@ -17,10 +18,12 @@ async def execute_transactions():
     global total_time
     global num_transactions
     node_id = node.id
-    transaction_file = f'/app/input/trans{node_id}.txt'
+    transaction_file = f'./input/trans{str(node_id)}.txt'
+    
     
     with open(transaction_file, 'r') as f:
         for i, line in enumerate(f):
+            
             # Get the info of the transaction.
             print(f"Sending transaction no. {i}")
             line = line.split(' ', 1)
@@ -48,7 +51,15 @@ async def execute_transactions():
     throughput = num_transactions/total_time
     block_time = sum(block_times)/len(block_times)
 
-    with open(f'/app/results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
+    print('-----------------------------------')
+    print('Final results for node %d' %node_id)
+    print('Throughput: %f' %throughput)
+    print('Block time: %f' %block_time)
+    print('Capacity: %d' %block_capacity)
+    print('-----------------------------------')
+
+    os.makedirs('./results', exist_ok=True)
+    with open(f'./results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
         f.write('Final results for node %d\n' %node_id)
         f.write('Throughput: %f\n' %throughput)
         f.write('Block time: %f\n' %block_time)
