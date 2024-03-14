@@ -24,14 +24,14 @@ async def send_websocket_request(action, data, ip, port):
     }
     print(f"Sending request to {ws_url} with {websocket}: {request}")
 
-     # Acquire the lock
-    async with lock:
-        # Send the request
-        await websocket.send(json.dumps(request))
+    #  # Acquire the lock
+    # async with lock:
+    # Send the request
+    await websocket.send(json.dumps(request))
 
-        # Wait for a response from the server
-        response = await websocket.recv()
-        print(f"Response from {ws_url}: {response} with request {request}")
+    # Wait for a response from the server
+    response = await websocket.recv()
+    print(f"Response from {ws_url}: {response} with request {request}")
 
 
     # try:

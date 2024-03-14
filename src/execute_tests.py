@@ -18,12 +18,10 @@ async def execute_transactions():
     global total_time
     global num_transactions
     node_id = node.id
-    transaction_file = f'./input/trans{str(node_id)}.txt'
-    
+    transaction_file = f'./input/trans{node_id}.txt'
     
     with open(transaction_file, 'r') as f:
         for i, line in enumerate(f):
-            
             # Get the info of the transaction.
             print(f"Sending transaction no. {i}")
             line = line.split(' ', 1)
@@ -47,22 +45,22 @@ async def execute_transactions():
                 exit("Node is not active. Try again later.\n")
 
     
-    block_times = [blockchain_timestamps[i+1] - blockchain_timestamps[i] for i in range(len(blockchain_timestamps) - 1)]
+    # block_times = [blockchain_timestamps[i+1] - blockchain_timestamps[i] for i in range(len(blockchain_timestamps) - 1)]
     throughput = num_transactions/total_time
-    block_time = sum(block_times)/len(block_times)
+    # block_time = sum(block_times)/len(block_times)
 
     print('-----------------------------------')
     print('Final results for node %d' %node_id)
     print('Throughput: %f' %throughput)
-    print('Block time: %f' %block_time)
+    # print('Block time: %f' %block_time)
     print('Capacity: %d' %block_capacity)
     print('-----------------------------------')
 
-    os.makedirs('./results', exist_ok=True)
-    with open(f'./results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
+    os.makedirs('/app/results', exist_ok=True)
+    with open(f'/app/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
         f.write('Final results for node %d\n' %node_id)
         f.write('Throughput: %f\n' %throughput)
-        f.write('Block time: %f\n' %block_time)
+        # f.write('Block time: %f\n' %block_time)
         f.write('Capacity: %d\n' %block_capacity)
         f.write('-----------------------------------')
         f.write('\n')
