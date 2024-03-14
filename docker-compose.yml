@@ -39,31 +39,96 @@ services:
       blockchat:
         ipv4_address: 172.18.0.4
 
-  # node4:
-  #   image: ntua-blockchain
-  #   environment:
-  #     - PORT=8003
-  #     - IP=172.18.0.5
-  #   ports:
-  #     - "8003:8000"
-  #   tty: true
-  #   stdin_open: true
-  #   networks:
-  #     blockchat:
-  #       ipv4_address: 172.18.0.5
+  node4:
+    image: ntua-blockchain
+    environment:
+      - PORT=8003
+      - IP=172.18.0.5
+    ports:
+      - "8003:8000"
+    tty: true
+    stdin_open: true
+    networks:
+      blockchat:
+        ipv4_address: 172.18.0.5
 
-  # node5:
-  #   image: ntua-blockchain
-  #   environment:
-  #     - PORT=8004
-  #     - IP=172.18.0.6
-  #   ports:
-  #     - "8004:8000"
-  #   tty: true
-  #   stdin_open: true
-  #   networks:
-  #     blockchat:
-  #       ipv4_address: 172.18.0.6
+  node5:
+    image: ntua-blockchain
+    environment:
+      - PORT=8004
+      - IP=172.18.0.6
+    ports:
+      - "8004:8000"
+    tty: true
+    stdin_open: true
+    networks:
+      blockchat:
+        ipv4_address: 172.18.0.6
+
+  node6:
+    image: ntua-blockchain
+    environment:
+      - PORT=8005
+      - IP=172.18.0.7
+    ports:
+      - "8005:8000"
+    tty: true
+    stdin_open: true
+    networks:
+      blockchat:
+        ipv4_address: 172.18.0.7
+
+  node7:
+    image: ntua-blockchain
+    environment:
+      - PORT=8006
+      - IP=172.18.0.8
+    ports:
+      - "8006:8000"
+    tty: true
+    stdin_open: true
+    networks:
+      blockchat:
+        ipv4_address: 172.18.0.8
+
+  node8:
+    image: ntua-blockchain
+    environment:
+      - PORT=8007
+      - IP=172.18.0.9
+    ports:
+      - "8007:8000"
+    tty: true
+    stdin_open: true
+    networks:
+      blockchat:
+        ipv4_address: 172.18.0.9
+
+  node9:
+    image: ntua-blockchain
+    environment:
+      - PORT=8008
+      - IP=172.18.0.10
+    ports:
+      - "8008:8000"
+    tty: true
+    stdin_open: true
+    networks:
+      blockchat:
+        ipv4_address: 172.18.0.10
+
+  node10:
+    image: ntua-blockchain
+    environment:
+      - PORT=8009
+      - IP=172.18.0.11
+    ports:
+      - "8009:8000"
+    tty: true
+    stdin_open: true
+    networks:
+      blockchat:
+        ipv4_address: 172.18.0.11
 
 networks:
   blockchat:

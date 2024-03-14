@@ -1,20 +1,23 @@
 import asyncio
 import time
-from websockets_serve import node, IP_ADDRESS, PORT, total_nodes
+from test_websockets_serve import node, IP_ADDRESS, PORT, total_nodes
 from wsmanager import send_websocket_request
 from block import block_capacity
 
 total_time = 0
 num_transactions = 0
-
+staking_amount = 10
 
 async def execute_transactions():
     """This function sends the transactions of the text file"""
+    
+    response = await send_websocket_request('stake', {'amount': staking_amount}, IP_ADDRESS, PORT)
+    print(response['message'])
 
     global total_time
     global num_transactions
     node_id = node.id
-    transaction_file = f'./input/trans{node_id}.txt'
+    transaction_file = f'/app/input/trans{node_id}.txt'
     
     with open(transaction_file, 'r') as f:
         for i, line in enumerate(f):
@@ -45,7 +48,7 @@ async def execute_transactions():
     throughput = num_transactions/total_time
     block_time = sum(block_times)/len(block_times)
 
-    with open(f'./results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
+    with open(f'/app/results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
         f.write('Final results for node %d\n' %node_id)
         f.write('Throughput: %f\n' %throughput)
         f.write('Block time: %f\n' %block_time)
@@ -55,5 +58,5 @@ async def execute_transactions():
     
 
 # Run the server
-if __name__ == "__main__":
-    asyncio.run(execute_transactions())
+# if __name__ == "__main__":
+#     asyncio.run(execute_transactions())
