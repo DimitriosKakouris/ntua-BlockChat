@@ -10,7 +10,7 @@ connections_self_update = {}
 # lock_update = asyncio.Lock()
 
 
-# locks =  {}
+locks =  {}
 async def send_websocket_request(action, data, ip, port):
     # Define the WebSocket URL
     ws_url = f"ws://{ip}:{port}"
@@ -23,10 +23,10 @@ async def send_websocket_request(action, data, ip, port):
 
 
     #   # Get the lock for this WebSocket, or create a new one if it doesn't exist
-    # lock = locks.get(ws_url)
-    # if lock is None:
-    #     lock = asyncio.Lock()
-    #     locks[ws_url] = lock
+    lock = locks.get(ws_url)
+    if lock is None:
+        lock = asyncio.Lock()
+        locks[ws_url] = lock
 
 
     # Define the request
@@ -36,17 +36,19 @@ async def send_websocket_request(action, data, ip, port):
     }
     # print(f"Sending request to {ws_url} with {websocket}: {request}")
 
-    #  # Acquire the lock
-    # async with lock:
-    # Send the request
-    await websocket.send(json.dumps(request))
+    # # #  # Acquire the lock
+    async with lock:
+        # Send the request
+        await websocket.send(json.dumps(request))
 
-    # Wait for a response from the server
-    response = await websocket.recv()
-        # print(f"Response from {ws_url}: {response} with request {request}")
+        try:
+            # Wait for a response from the server with a timeout
+            response = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+        except asyncio.TimeoutError:
+            print(f"No response from {ws_url} within timeout")
+            return None
 
-
-    # try:
+# try:
     return json.loads(response)
    
 
@@ -76,15 +78,15 @@ async def send_websocket_request_update(action, data, ip, port):
     # print(f"Sending request to {ws_url} with {websocket}: {request}")
 
     async with lock:
-        # Send the request
-        await websocket.send(json.dumps(request))
+      try:
+            # Send the request
+            await websocket.send(json.dumps(request))
 
-        try:
             # Wait for a response from the server with a timeout
             response = await asyncio.wait_for(websocket.recv(), timeout=1.0)
-        except asyncio.TimeoutError:
-            print(f"No response from {ws_url} within timeout")
-            return None
+      except (websockets.exceptions.ConnectionClosedError, asyncio.TimeoutError,ConnectionRefusedError):
+            print(f"Connection to {ws_url} lost, retrying...")
+            return json.loads('{"message": "Connection to the node lost"}')
 
     return json.loads(response)
   

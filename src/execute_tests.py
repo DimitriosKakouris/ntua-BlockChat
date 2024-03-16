@@ -1,7 +1,7 @@
 import asyncio
 import os
 import time
-from test_websockets_serve import node, IP_ADDRESS, PORT, total_nodes
+from test_websockets_serve import IP_ADDRESS, PORT, total_nodes
 from wsmanager import send_websocket_request
 from block import block_capacity
 
@@ -9,15 +9,17 @@ total_time = 0
 num_transactions = 0
 staking_amount = 10
 
-async def execute_transactions():
+async def execute_transactions(node_id):
     """This function sends the transactions of the text file"""
+    print(f"Executing transactions for node {node_id} with IP {IP_ADDRESS} and port {PORT}...")
+    # exit()
     
+    # asyncio.sleep(0.2)
     response = await send_websocket_request('stake', {'amount': staking_amount}, IP_ADDRESS, PORT)
     print(response['message'])
 
     global total_time
     global num_transactions
-    node_id = node.id
     transaction_file = f'./input/trans{node_id}.txt'
     # blockchain_timestamps = []
     
@@ -25,6 +27,7 @@ async def execute_transactions():
         for i, line in enumerate(f):
             # Get the info of the transaction.
             print(f"Sending transaction no. {i}")
+            # await asyncio.sleep(0.3)
             line = line.split(' ', 1)
             receiver_id = int(line[0][2])
             message = line[1].strip()
@@ -44,15 +47,17 @@ async def execute_transactions():
             except:
                 exit("Node is not active. Try again later.\n")
 
-    blockchain_timestamps = await send_websocket_request('get_blockchain_timestamps', {}, IP_ADDRESS, PORT)    
+    blockchain_timestamps = await send_websocket_request('get_block_timestamps', {}, IP_ADDRESS, PORT)
+    print(f'Blockchain timestamps: {blockchain_timestamps}')
+     
     block_times = [blockchain_timestamps[i+1] - blockchain_timestamps[i] for i in range(len(blockchain_timestamps) - 1)]
     throughput = num_transactions/total_time
-    block_time = sum(block_times)/len(block_times)
+    # block_time = sum(block_times)/len(block_times)
 
     print('-----------------------------------')
     print('Final results for node %d' %node_id)
     print('Throughput: %f' %throughput)
-    print('Block time: %f' %block_time)
+    # print('Block time: %f' %block_time)
     print('Capacity: %d' %block_capacity)
     print('-----------------------------------')
 
@@ -60,7 +65,7 @@ async def execute_transactions():
     with open(f'/app/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
         f.write('Final results for node %d\n' %node_id)
         f.write('Throughput: %f\n' %throughput)
-        f.write('Block time: %f\n' %block_time)
+        # f.write('Block time: %f\n' %block_time)
         f.write('Capacity: %d\n' %block_capacity)
         f.write('-----------------------------------')
         f.write('\n')

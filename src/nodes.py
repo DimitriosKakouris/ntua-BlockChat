@@ -272,18 +272,17 @@ class Node:
 
         for node in self.ring :
                 if self.id != node['id']:
-         
                      asyncio.create_task(self.send_transaction(node, transaction))
          
                 
-        for node in self.ring:
-            if self.id == node['id']:
-                 response = await self.send_transaction(node, transaction)
+        # for node in self.ring:
+        #     if self.id == node['id']:
+        response = await self.update_block(transaction.to_dict())
 
        
         print("Response from self:", response)  
 
-        if response["message"] == "Transaction Invalid" :
+        if response["message"] == "Transaction Invalid":
             
             return {'valid': False}
         
@@ -296,8 +295,8 @@ class Node:
       
 
     async def send_block(self, node, block):
-   
-        res= await send_websocket_request_unique('new_block', block.to_dict(), node['ip'], node['port'])
+        
+        res = await send_websocket_request_unique('new_block', block.to_dict(), node['ip'], node['port'])
      
         return res
     
@@ -306,18 +305,18 @@ class Node:
         """Broadcasts a block to the network using WebSockets."""
      
         for node in self.ring:
-            if node['id'] != self.id:
                 asyncio.create_task(self.send_block(node, block))
-            else:
-                response = await self.send_block(node, block)
+          
+        
+        response = await self.send_block({'ip':self.ip,'port':self.port}, block)
 
     
-        print("Responses from self:", response)
+        print("Responses from self broadcast_block:", response)
 
 
         for ring_node in self.ring:
             if ring_node['id'] != self.id:
-                await send_websocket_request('update_soft_state', self.account_space, ring_node['ip'], ring_node['port'])
+                await send_websocket_request_unique('update_soft_state', self.account_space, ring_node['ip'], ring_node['port'])
         return True
             
 
@@ -345,13 +344,15 @@ class Node:
         validator = await self.current_block.select_validator(self)
 
         await self.chain.mint_block(self)
+        block_to_be_broadcasted = self.current_block
+        self.current_block = None
 
         if self.id == validator['id']:
         
             # self.wallet.balance = self.account_space[self.wallet.public_key]['balance']
             # self.stake_amount = self.account_space[self.wallet.public_key]['stake']
 
-            await self.broadcast_block(self.current_block)
+            await self.broadcast_block(block_to_be_broadcasted)
             #new_timestamp = time.time()
     
     async def add_transaction_to_block(self, transaction):
@@ -366,23 +367,63 @@ class Node:
             previous_hash=self.chain.blocks[-1].current_hash,
             )
         
-        if await self.validate_transaction(transaction):
-            if self.current_block.add_transaction(transaction):
-               return {'status': 200, 'message': 'Block is full'}
-            
-            else:
-                return {'status': 200, 'message': 'Transaction added to block'}
+      
+        if self.current_block.add_transaction(transaction):
+            return {'status': 200, 'message': 'Block is full'}
+        
+        
+        return {'status': 200, 'message': 'Transaction added to block'}
       
 
-                # validator = await self.current_block.select_validator(self.ring)  
-                # with self.node_lock:
-                #     res = await send_websocket_request('selected_as_validator', {'index':str(self.current_block.index)},  validator['ip'], validator['port'])
-                #     minting_time = res['minting_time'] 
-            
-        print(transaction.to_dict())
-        return {'status': 400, 'message': "Transaction couldn't be added to block"}
-                # return minting_time
+        # print(transaction.to_dict())
+        # return {'status': 400, 'message': "Transaction couldn't be added to block"}
+        #         # return minting_time
                             
 
 
    
+    async def update_block(self, data):
+        transaction = data
+        print("I am in 'update_block'")
+        try:
+
+            if await self.validate_transaction(Transaction.from_dict(transaction)):
+
+                flag = 1 if transaction['type_of_transaction'] == 'coin' and transaction['recipient_address'] != '0'  and (self.account_space[transaction['sender_address']]['id'] != 0 or transaction['nonce'] >= len(self.ring) ) else 0
+                message_flag = 0 if transaction['type_of_transaction'] == 'message' else 1
+
+                if transaction['recipient_address'] != '0':
+                    self.account_space[transaction['sender_address']]['balance'] -= int(transaction['amount']) * (1 + 0.03 * flag)
+                    self.account_space[transaction['recipient_address']]['balance'] += int(transaction['amount']) * message_flag
+
+                else:
+                    self.account_space[transaction['sender_address']]['balance'] += self.account_space[transaction['sender_address']]['stake']
+                    self.account_space[transaction['sender_address']]['stake'] = int(transaction['amount'])
+                    self.account_space[transaction['sender_address']]['balance'] -= self.account_space[transaction['sender_address']]['stake']
+                
+                
+                transaction = Transaction.from_dict(transaction)
+                self.transaction_pool.append(transaction)
+                res = await self.add_transaction_to_block(transaction)
+                print("Response from add_transaction_to_block:", res)
+
+                
+                if res['status'] == 200 and res['message'] == 'Block is full':
+                    #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
+                        await self.mint_block()
+                        return {'valid': True, 'message': 'Block is full'}
+                    #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
+
+                    
+                elif res['status'] == 200 and res['message'] == 'Transaction added to block':
+                    return {'valid': True, 'message': 'Transaction added to block'}
+            #         # await websocket.send(json.dumps({'valid':True,'message':'Transaction added to block'}))
+
+                    
+          
+                
+            return {'valid': False, 'message': 'Transaction Invalid'}
+        
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return {'valid': False, 'message': 'An error occurred'}

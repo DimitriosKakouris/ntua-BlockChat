@@ -45,6 +45,7 @@ if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
 #bootstrap_ready_event = asyncio.Event()
 # Register node to the cluster
 bootstrap_ready_event = asyncio.Event()
+test_ready_event = asyncio.Event()
 async def register_node():
     #global bootstrap_ready_event
     # bootstrap_ready_event = asyncio.Condition()
@@ -80,7 +81,8 @@ async def register_node():
             await send_init_bcc()
             #await node.send_initial_bcc()
             print('After send_initial_bcc')
-            #await execute_tests.execute_transactions()
+            await test_ready_event.wait()
+            await execute_tests.execute_transactions(node.id)
 
         else: 
             # Gather all unicast tasks
@@ -90,7 +92,11 @@ async def register_node():
             print("Ring length: ", data['ring_len'])
             if data['ring_len'] == total_nodes: #TODO: may need better condition
                 await send_websocket_request('last_node_ready', {}, bootstrap_node['ip'], bootstrap_node['port'])
-                print("Last node is ready")
+                # test_ready_event.set()
+              
+
+            await test_ready_event.wait()
+            await execute_tests.execute_transactions(node.id)
                 # await execute_tests.execute_transactions()
 
     
@@ -102,7 +108,7 @@ async def send_init_bcc():
 
         """
         for node in self.ring :
-                if self.id != node['id']:
+                if self.id != node['id']:a
          
                      asyncio.create_task(self.send_transaction(node, transaction))
          
@@ -111,13 +117,18 @@ async def send_init_bcc():
             if self.id == node['id']:
                  response = await self.send_transaction(node, transaction)
         """
+        # await asyncio.sleep(1)
+        # for ring_node in node.ring:
+            # if ring_node['id'] != 0:
         for ring_node in node.ring:
             if ring_node['id'] != 0:
-                asyncio.create_task(send_websocket_request('execute_tests', {}, ring_node['ip'], ring_node['port']))
+                 asyncio.create_task(send_websocket_request('ready_for_tests', {}, ring_node['ip'], ring_node['port']))
                 
-        for ring_node in node.ring:
-            if ring_node['id'] == 0:
-                await send_websocket_request('execute_tests', {}, ring_node['ip'], ring_node['port'])
+        await send_websocket_request('ready_for_tests', {}, node.ip, node.port)
+                
+        # for ring_node in node.ring:
+        #     if ring_node['id'] == 0:
+        #         await send_websocket_request('execute_tests', {}, ring_node['ip'], ring_node['port'])
         
 
 
@@ -134,10 +145,12 @@ async def handler(websocket):
             bootstrap_ready_event.set()  # Signal the event
             await websocket.send(json.dumps({'message': "Last node is ready endpoint triggered"}))
 
-        elif data['action'] == 'execute_tests':
-            await asyncio.sleep(1)
-            await execute_tests.execute_transactions()
-            await websocket.send(json.dumps({'message': "Tests executed"}))
+        elif data['action'] == 'ready_for_tests':
+            # await asyncio.sleep(1)
+            test_ready_event.set()
+            await websocket.send(json.dumps({'message': "Tests event set"}))
+          
+            # await websocket.send(json.dumps({'message': "Tests executed"}))
         
 
         elif data['action'] == 'register_node':
@@ -227,7 +240,7 @@ async def handler(websocket):
 
         elif data['action'] == 'update_soft_state':
             node.account_space = data['data']
-           # print(f"Node {node.id} received 'update_soft_state' action")
+            print(f"Node {node.id} received 'update_soft_state' action")
             await websocket.send(json.dumps({'message': "Soft state updated"}))
 
 
@@ -296,6 +309,7 @@ async def handler(websocket):
      
         
         elif data['action'] == 'update_block':
+          
             transaction = data['data']
             print("I am in 'update_block'")
          
@@ -321,12 +335,14 @@ async def handler(websocket):
 
                
                 if res['status'] == 200 and res['message'] == 'Block is full':
+                    #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
                      await node.mint_block()
-                     await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
- 
+                    #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
+
+                await websocket.send(json.dumps({'valid':True,'message':'Transaction added to block'}))
                     
-                elif res['status'] == 200 and res['message'] == 'Transaction added to block':
-                    await websocket.send(json.dumps({'valid':True,'message':'Transaction added to block'}))
+            #     elif res['status'] == 200 and res['message'] == 'Transaction added to block':
+            #         # await websocket.send(json.dumps({'valid':True,'message':'Transaction added to block'}))
 
                     
             else:
@@ -342,7 +358,7 @@ async def handler(websocket):
             if await node.validate_block(Block.from_dict(data['data'])):
                 print(f'I am as node {node.id} in new_block and validated')
                 node.chain.add_block(Block.from_dict(data['data']))
-                node.current_block = None
+                # node.current_block = None
                 await node.update_balance()
                 #await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
                 await websocket.send(json.dumps({'status':200,'message':'Block added to chain', 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
