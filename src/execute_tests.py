@@ -1,7 +1,7 @@
 import asyncio
 import os
 import time
-from test_websockets_serve import IP_ADDRESS, PORT, total_nodes
+from test_websockets_serve import total_nodes
 from wsmanager import send_websocket_request
 from block import block_capacity
 
@@ -9,7 +9,7 @@ total_time = 0
 num_transactions = 0
 staking_amount = 10
 
-async def execute_transactions(node_id):
+async def execute_transactions(node_id, IP_ADDRESS, PORT):
     """This function sends the transactions of the text file"""
     print(f"Executing transactions for node {node_id} with IP {IP_ADDRESS} and port {PORT}...")
     # exit()
@@ -22,6 +22,8 @@ async def execute_transactions(node_id):
     global num_transactions
     transaction_file = f'./input/trans{node_id}.txt'
     # blockchain_timestamps = []
+
+    # await asyncio.sleep(1)
     
     with open(transaction_file, 'r') as f:
         for i, line in enumerate(f):
@@ -47,6 +49,7 @@ async def execute_transactions(node_id):
             except:
                 exit("Node is not active. Try again later.\n")
 
+    await asyncio.sleep(6)
     blockchain_timestamps = await send_websocket_request('get_block_timestamps', {}, IP_ADDRESS, PORT)
     print(f'Blockchain timestamps: {blockchain_timestamps}')
      

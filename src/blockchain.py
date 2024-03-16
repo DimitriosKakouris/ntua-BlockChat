@@ -45,6 +45,8 @@ class Blockchain:
 
         current_block = node.current_block
 
+        
+
         # curr_spending = {}
         # for ring_member in node.ring:
         #     curr_spending[ring_member['public_key']] = 0

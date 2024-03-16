@@ -69,6 +69,7 @@ class Node:
         flag = 1 if transaction.type_of_transaction == 'coin' and (int(self.account_space[transaction.sender_address]['id'])!= 0 or transaction.nonce >= len(self.ring) ) else 0
         stake_flag = 1 if transaction.receiver_address == '0' else 0
         if int(transaction.amount) * (1 + flag * 0.03)  > int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag:
+            print(f"Insufficient balance {int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag} and amount {int(transaction.amount) * (1 + flag * 0.03)}")
             return False
     
      
@@ -345,7 +346,12 @@ class Node:
 
         await self.chain.mint_block(self)
         block_to_be_broadcasted = self.current_block
-        self.current_block = None
+
+        # self.current_block = None
+        self.current_block = Block(
+            index=block_to_be_broadcasted.index + 1 ,
+            previous_hash=self.current_block.current_hash,
+        )
 
         if self.id == validator['id']:
         
@@ -353,6 +359,11 @@ class Node:
             # self.stake_amount = self.account_space[self.wallet.public_key]['stake']
 
             await self.broadcast_block(block_to_be_broadcasted)
+         
+          
+        
+        
+
             #new_timestamp = time.time()
     
     async def add_transaction_to_block(self, transaction):

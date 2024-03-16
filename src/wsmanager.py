@@ -37,16 +37,16 @@ async def send_websocket_request(action, data, ip, port):
     # print(f"Sending request to {ws_url} with {websocket}: {request}")
 
     # # #  # Acquire the lock
-    async with lock:
-        # Send the request
-        await websocket.send(json.dumps(request))
+    # async with lock:
+    # Send the request
+    await websocket.send(json.dumps(request))
 
-        try:
-            # Wait for a response from the server with a timeout
-            response = await asyncio.wait_for(websocket.recv(), timeout=1.0)
-        except asyncio.TimeoutError:
-            print(f"No response from {ws_url} within timeout")
-            return None
+    try:
+        # Wait for a response from the server with a timeout
+        response = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+    except asyncio.TimeoutError:
+        print(f"No response from {ws_url} within timeout")
+        return None
 
 # try:
     return json.loads(response)

@@ -82,7 +82,7 @@ async def register_node():
             #await node.send_initial_bcc()
             print('After send_initial_bcc')
             await test_ready_event.wait()
-            await execute_tests.execute_transactions(node.id)
+            await execute_tests.execute_transactions(node.id, node.ip, node.port)
 
         else: 
             # Gather all unicast tasks
@@ -96,7 +96,7 @@ async def register_node():
               
 
             await test_ready_event.wait()
-            await execute_tests.execute_transactions(node.id)
+            await execute_tests.execute_transactions(node.id, node.ip, node.port)
                 # await execute_tests.execute_transactions()
 
     
@@ -120,8 +120,9 @@ async def send_init_bcc():
         # await asyncio.sleep(1)
         # for ring_node in node.ring:
             # if ring_node['id'] != 0:
+        await asyncio.sleep(3)
         for ring_node in node.ring:
-            if ring_node['id'] != 0:
+            # if ring_node['id'] == 1:
                  asyncio.create_task(send_websocket_request('ready_for_tests', {}, ring_node['ip'], ring_node['port']))
                 
         await send_websocket_request('ready_for_tests', {}, node.ip, node.port)
@@ -366,6 +367,13 @@ async def handler(websocket):
 
 
             else:
+                if Block.from_dict(data['data']).previous_hash != node.chain.blocks[-1].current_hash:
+                    print(f"#########BLOCK INVALID - HASH PROBLEM CURRENT INDEX {node.chain.blocks[-1].index} and INCOMING {Block.from_dict(data['data']).index} ###########")
+                elif Block.from_dict(data['data']).validator != (await Block.from_dict(data['data']).select_validator(node))['pk']:
+                    print(f"#########BLOCK INVALID VALIDATOR PROBLEM INDEX {Block.from_dict(data['data']).index} ###########")
+                    validator = await Block.from_dict(data['data']).select_validator(node)
+                    print(f"Expected validator: {validator['pk']} but got {Block.from_dict(data['data']).validator} ########")
+               
                 await websocket.send(json.dumps({'status':400,'message':'Block Invalid'}))
 
         
