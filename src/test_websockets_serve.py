@@ -40,7 +40,7 @@ if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
     bootstrap_node = node
     print("I am bootstrap")
 
-initialization_event = asyncio.Event()
+# node.initialization_event = asyncio.Event()
 
 #bootstrap_ready_event = asyncio.Event()
 # Register node to the cluster
@@ -98,8 +98,26 @@ async def send_init_bcc():
     print("Node ID in send initial: ", node.id)
     if node.id == 0:
         await node.send_initial_bcc()
-        initialization_event.set()
-        #await send_websocket_request('notify_other_nodes', {}, node.ip, node.port)
+        # node.initialization_event.set()
+
+        """
+        for node in self.ring :
+                if self.id != node['id']:
+         
+                     asyncio.create_task(self.send_transaction(node, transaction))
+         
+                
+        for node in self.ring:
+            if self.id == node['id']:
+                 response = await self.send_transaction(node, transaction)
+        """
+        for ring_node in node.ring:
+            if ring_node['id'] != 0:
+                asyncio.create_task(send_websocket_request('execute_tests', {}, ring_node['ip'], ring_node['port']))
+                
+        for ring_node in node.ring:
+            if ring_node['id'] == 0:
+                await send_websocket_request('execute_tests', {}, ring_node['ip'], ring_node['port'])
         
 
 
@@ -116,8 +134,10 @@ async def handler(websocket):
             bootstrap_ready_event.set()  # Signal the event
             await websocket.send(json.dumps({'message': "Last node is ready endpoint triggered"}))
 
-        # elif data['action'] == 'notify_other_nodes':
-        #     if 
+        elif data['action'] == 'execute_tests':
+            await asyncio.sleep(1)
+            await execute_tests.execute_transactions()
+            await websocket.send(json.dumps({'message': "Tests executed"}))
         
 
         elif data['action'] == 'register_node':
@@ -360,9 +380,9 @@ async def main():
         
         await register_node()  # Register the node with the bootstrap node
 
-        await initialization_event.wait()
+        # await initialization_event.wait()
     
-        await execute_tests.execute_transactions()
+        # await execute_tests.execute_transactions()
      
         await asyncio.Future()  # This will keep the server running indefinitely
 
