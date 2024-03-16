@@ -90,6 +90,7 @@ async def register_node():
             if data['ring_len'] == total_nodes: #TODO: may need better condition
                 await send_websocket_request('last_node_ready', {}, bootstrap_node['ip'], bootstrap_node['port'])
                 print("Last node is ready")
+                # await execute_tests.execute_transactions()
 
     
 async def send_init_bcc():

@@ -1,4 +1,5 @@
 from asyncio import Lock
+import logging
 import websockets
 import json
 import asyncio
@@ -75,14 +76,16 @@ async def send_websocket_request_update(action, data, ip, port):
     # print(f"Sending request to {ws_url} with {websocket}: {request}")
 
     async with lock:
-    # # Send the request
+        # Send the request
         await websocket.send(json.dumps(request))
 
-        # Wait for a response from the server
-        response = await websocket.recv()
-    # print(f"Response from {ws_url}: {response} with request {request}")
+        try:
+            # Wait for a response from the server with a timeout
+            response = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+        except asyncio.TimeoutError:
+            print(f"No response from {ws_url} within timeout")
+            return None
 
-    
     return json.loads(response)
   
 

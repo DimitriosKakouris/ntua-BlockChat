@@ -263,7 +263,7 @@ class Node:
         # if self.id == node['id']:
             # response = await send_websocket_request_self_update('update_block', transaction.to_dict(), self.ip, self.port)
         # else:
-        response = await send_websocket_request_unique('update_block', transaction.to_dict(),  node['ip'], node['port'])
+        response = await send_websocket_request_update('update_block', transaction.to_dict(),  node['ip'], node['port'])
         
         return response
 
