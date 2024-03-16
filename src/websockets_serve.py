@@ -318,7 +318,6 @@ async def handler(websocket):
                 await websocket.send(json.dumps({'status':200,'message':'Block added to chain', 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
 
 
-
             else:
                 await websocket.send(json.dumps({'status':400,'message':'Block Invalid'}))
 

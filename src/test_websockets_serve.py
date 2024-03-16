@@ -77,9 +77,10 @@ async def register_node():
             await bootstrap_ready_event.wait()
             #await bootstrap_ready_event.wait()
             print("Bootstrap node proceeding...")
-            await node.send_initial_bcc()
+            await send_init_bcc()
+            #await node.send_initial_bcc()
             print('After send_initial_bcc')
-            await execute_tests.execute_transactions()
+            #await execute_tests.execute_transactions()
 
         else: 
             # Gather all unicast tasks
@@ -97,7 +98,9 @@ async def send_init_bcc():
     print("Node ID in send initial: ", node.id)
     if node.id == 0:
         await node.send_initial_bcc()
-
+        initialization_event.set()
+        #await send_websocket_request('notify_other_nodes', {}, node.ip, node.port)
+        
 
 
 async def handler(websocket):
@@ -111,8 +114,10 @@ async def handler(websocket):
         if data['action'] == 'last_node_ready':
             print("Last node is ready, proceeding...")
             bootstrap_ready_event.set()  # Signal the event
-            initialization_event.set()
             await websocket.send(json.dumps({'message': "Last node is ready endpoint triggered"}))
+
+        # elif data['action'] == 'notify_other_nodes':
+        #     if 
         
 
         elif data['action'] == 'register_node':
@@ -328,9 +333,14 @@ async def handler(websocket):
                 await websocket.send(json.dumps({'status':400,'message':'Block Invalid'}))
 
         
-        elif data['action'] == 'get_last_block_timestamp':
-            timestamp = node.chain.blocks[-1].timestamp
-            await websocket.send(json.dumps({'timestamp':timestamp}))
+        # elif data['action'] == 'get_last_block_timestamp':
+        #     timestamp = node.chain.blocks[-1].timestamp
+        #     await websocket.send(json.dumps({'timestamp':timestamp}))
+                
+        
+        elif data['action'] == 'get_block_timestamps':
+            timestamps = [block.timestamp for block in node.chain.blocks]
+            await websocket.send(json.dumps({'timestamps':timestamps}))
 
      
         # elif data['action'] == 'get_fees':
@@ -350,9 +360,9 @@ async def main():
         
         await register_node()  # Register the node with the bootstrap node
 
-        # await initialization_event.wait()
+        await initialization_event.wait()
     
-        # await execute_tests.execute_transactions()
+        await execute_tests.execute_transactions()
      
         await asyncio.Future()  # This will keep the server running indefinitely
 

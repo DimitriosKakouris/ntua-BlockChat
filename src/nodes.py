@@ -24,8 +24,7 @@ class Node:
         self.transaction_pool = []
         self.stake_amount = 0
         self.account_space = {}
-      
-       
+        
 
 
 
