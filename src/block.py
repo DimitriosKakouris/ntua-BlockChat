@@ -21,14 +21,11 @@ class Block:
 
 
     def add_transaction(self, transaction):
-       
-        # print(f"Adding transaction to block {transaction.to_dict()}")
-        # print(f"Current transactions array is {self.transactions}")
         print("I am in 'add_transaction'")
-        self.transactions.append(transaction)
+        if len(self.transactions) < self.capacity:
+            self.transactions.append(transaction)
         # print(f"Transaction added to block and curr length is {len(self.transactions)}")
-        if len(self.transactions) >= self.capacity:
-            # print(f"Block is full")
+        else:
             return True # Block is full
         return False
     
@@ -110,6 +107,9 @@ class Block:
             if current >= selection_point:
               
                 return node_stake 
+            
+
+       
 
         # Fallback, should not reach here if implemented correctly
         raise Exception("Failed to select a validator. Check the implementation.")

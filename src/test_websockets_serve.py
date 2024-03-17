@@ -309,41 +309,27 @@ async def handler(websocket):
 
      
         
-        elif data['action'] == 'update_block':
+        elif data['action'] == 'receive_transactions':
           
             transaction = data['data']
-            print("I am in 'update_block'")
+            print("I am in 'receive_transactions'")
          
 
             if await node.validate_transaction(Transaction.from_dict(transaction)):
-
-                flag = 1 if transaction['type_of_transaction'] == 'coin' and transaction['recipient_address'] != '0'  and (node.account_space[transaction['sender_address']]['id'] != 0 or transaction['nonce'] >= len(node.ring) ) else 0
-                message_flag = 0 if transaction['type_of_transaction'] == 'message' else 1
-
-                if transaction['recipient_address'] != '0':
-                    node.account_space[transaction['sender_address']]['balance'] -= int(transaction['amount']) * (1 + 0.03 * flag)
-                    node.account_space[transaction['recipient_address']]['balance'] += int(transaction['amount']) * message_flag
-
-                else:
-                    node.account_space[transaction['sender_address']]['balance'] += node.account_space[transaction['sender_address']]['stake']
-                    node.account_space[transaction['sender_address']]['stake'] = int(transaction['amount'])
-                    node.account_space[transaction['sender_address']]['balance'] -= node.account_space[transaction['sender_address']]['stake']
-                
               
                 transaction = Transaction.from_dict(transaction)
                 node.transaction_pool.append(transaction)
                 res = await node.add_transaction_to_block(transaction)
 
                
-                if res['status'] == 200 and res['message'] == 'Block is full':
+                if res['status'] == 200 and res['message'] == 'Block is full and going to mint':
                     #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
                      await node.mint_block()
+                     await websocket.send(json.dumps(res))
                     #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
-
-                await websocket.send(json.dumps({'valid':True,'message':'Transaction added to block'}))
-                    
-            #     elif res['status'] == 200 and res['message'] == 'Transaction added to block':
-            #         # await websocket.send(json.dumps({'valid':True,'message':'Transaction added to block'}))
+                else:
+                    await websocket.send(json.dumps(res))
+       
 
                     
             else:
@@ -359,8 +345,23 @@ async def handler(websocket):
             if await node.validate_block(Block.from_dict(data['data'])):
                 print(f'I am as node {node.id} in new_block and validated')
                 node.chain.add_block(Block.from_dict(data['data']))
-                # node.current_block = None
                 await node.update_balance()
+
+
+
+
+                # node.current_block = None
+                node.current_block = Block(node.chain.blocks[-1].index + 1, node.chain.blocks[-1].current_hash)
+
+                for _ in range(5):
+                    if not node.pending_transactions:
+                        break
+                    trans = node.pending_transactions.pop(0)
+                    await node.add_transaction_to_block(trans)
+
+
+
+             
                 #await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
                 await websocket.send(json.dumps({'status':200,'message':'Block added to chain', 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
 
@@ -368,7 +369,7 @@ async def handler(websocket):
 
             else:
                 if Block.from_dict(data['data']).previous_hash != node.chain.blocks[-1].current_hash:
-                    print(f"#########BLOCK INVALID - HASH PROBLEM CURRENT INDEX {node.chain.blocks[-1].index} and INCOMING {Block.from_dict(data['data']).index} ###########")
+                    print(f"#########BLOCK INVALID - HASH MISMATCH ###########")
                 elif Block.from_dict(data['data']).validator != (await Block.from_dict(data['data']).select_validator(node))['pk']:
                     print(f"#########BLOCK INVALID VALIDATOR PROBLEM INDEX {Block.from_dict(data['data']).index} ###########")
                     validator = await Block.from_dict(data['data']).select_validator(node)
@@ -383,7 +384,7 @@ async def handler(websocket):
                 
         
         elif data['action'] == 'get_block_timestamps':
-            timestamps = [block.timestamp for block in node.chain.blocks]
+            timestamps = [block.current_hash[:20] for block in node.chain.blocks]
             await websocket.send(json.dumps({'timestamps':timestamps}))
 
      
