@@ -10,7 +10,7 @@ from collections import deque
 
 load_dotenv()
 total_nodes = int(os.getenv('TOTAL_NODES', 5))
-
+block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
 
 class Node:
     def __init__(self):
@@ -273,6 +273,7 @@ class Node:
 
     async def update_soft_state(self,transaction):
         #async with self.block_lock: #and transaction['recipient_address'] != '0' 
+        print("I am in 'update_soft_state'")
         flag = 1 if transaction['type_of_transaction'] == 'coin' and (self.account_space[transaction['sender_address']]['id'] != 0 or transaction['nonce'] >= len(self.ring) ) else 0
         message_flag = 0 if transaction['type_of_transaction'] == 'message' else 1
 
@@ -293,6 +294,7 @@ class Node:
         # print("Account space before update:", self.account_space)
         # async with self.block_lock: #and transaction['recipient_address'] != '0' 
         for transaction in transactions:
+            print(transaction)
             flag = 1 if transaction['type_of_transaction'] == 'coin' and (self.account_space[transaction['sender_address']]['id'] != 0 or transaction['nonce'] >= total_nodes ) else 0
             message_flag = 0 if transaction['type_of_transaction'] == 'message' else 1
 
@@ -315,6 +317,15 @@ class Node:
             self.account_space[i]['stake'] = self.account_space[i]['valid_stake']
         self.wallet.balance = self.account_space[self.wallet.public_key]['valid_balance']
         self.stake_amount = self.account_space[self.wallet.public_key]['valid_stake']
+
+        buffer_deque = deque()
+        while self.pending_transactions:
+            trans = self.pending_transactions.popleft()
+            trans_dict = trans.to_dict()
+            if trans_dict not in transactions:
+                buffer_deque.append(trans)
+        while buffer_deque:
+            self.pending_transactions.appendleft(buffer_deque.pop())
 
        
     async def share_ring(self, node):
@@ -552,8 +563,9 @@ class Node:
 
             # node.current_block = None
             self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
-
-            for _ in range(5):
+            print_pending_transactions = [i.to_dict() for i in self.pending_transactions]
+            print("Pending transactions: ", print_pending_transactions)
+            for _ in range(block_capacity):
                 if not self.pending_transactions:
                     break
                 trans = self.pending_transactions.popleft()

@@ -20,6 +20,8 @@ IP_ADDRESS = os.getenv("IP", "172.18.0.2")
 PORT = os.getenv("PORT", 8000)
 total_nodes = int(os.getenv('TOTAL_NODES', 3))
 total_bcc = total_nodes * 1000
+block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
+test_mode = bool(os.getenv('TEST_MODE', False))
 
 bootstrap_node = {
     'ip': os.getenv('BOOTSTRAP_IP', '172.18.0.2'),
@@ -84,7 +86,8 @@ async def register_node():
             #await node.send_initial_bcc()
             print('After send_initial_bcc')
             await test_ready_event.wait()
-            #await execute_tests.execute_transactions(node.id, node.ip, node.port)
+            if test_mode:
+                await execute_tests.execute_transactions(node.id, node.ip, node.port)
 
         else: 
             # Gather all unicast tasks
@@ -99,7 +102,8 @@ async def register_node():
               
 
             await test_ready_event.wait()
-            #await execute_tests.execute_transactions(node.id, node.ip, node.port)
+            if test_mode:
+                await execute_tests.execute_transactions(node.id, node.ip, node.port)
                 # await execute_tests.execute_transactions()
 
     
@@ -373,8 +377,9 @@ async def handler(websocket):
 
                     # node.current_block = None
                     node.current_block = Block(node.chain.blocks[-1].index + 1, node.chain.blocks[-1].current_hash)
-
-                    for _ in range(5):
+                    print_pending_transactions = [i.to_dict() for i in node.pending_transactions]
+                    print("Pending transactions: ", print_pending_transactions)
+                    for _ in range(block_capacity):
                         if not node.pending_transactions:
                             break
                         trans = node.pending_transactions.popleft()
