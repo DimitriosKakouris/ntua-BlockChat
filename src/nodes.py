@@ -6,7 +6,7 @@ from wsmanager import send_websocket_request, send_websocket_request_unique, sen
 import asyncio
 import os
 from dotenv import load_dotenv
-import time
+from collections import deque
 
 load_dotenv()
 total_nodes = int(os.getenv('TOTAL_NODES', 5))
@@ -22,9 +22,10 @@ class Node:
         self.port = None
         self.current_block = None
         self.transaction_pool = []
-        self.stake_amount = 0
+        self.stake_amount = 10
         self.account_space = {}
-        self.pending_transactions = []
+        self.pending_transactions = deque()
+        self.block_lock = asyncio.Lock()
         
 
 
@@ -70,7 +71,7 @@ class Node:
         flag = 1 if transaction.type_of_transaction == 'coin' and (int(self.account_space[transaction.sender_address]['id'])!= 0 or transaction.nonce >= len(self.ring) ) else 0
         stake_flag = 1 if transaction.receiver_address == '0' else 0
         if int(transaction.amount) * (1 + flag * 0.03)  > int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag:
-            print(f"Insufficient balance {int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag} and amount {int(transaction.amount) * (1 + flag * 0.03)}")
+            # print(f"Insufficient balance {int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag} and amount {int(transaction.amount) * (1 + flag * 0.03)}")
             return False
     
      
@@ -111,7 +112,7 @@ class Node:
                 "port": port,
                 "balance": total_nodes * 1000,
                 #"valid_balance":3000,
-                "stake": 0,
+                "stake": 10,
                 #"valid_stake": 0
             }
         else:
@@ -121,7 +122,7 @@ class Node:
                 "port": port,
                 #"balance": 1000,
                 "balance": 0,
-                "stake": 0,
+                "stake": 10,
             }
 
     
@@ -165,52 +166,58 @@ class Node:
 
 
     async def update_balance(self):
-        transaction_pool_copy = self.pending_transactions.copy()
-        #transaction_pool_copy = self.transaction_pool.copy()
-        for trans in transaction_pool_copy:
-            if any(trans.transaction_id == transaction.transaction_id for transaction in self.chain.blocks[-1].transactions):
-                
-                flag = 1 if trans.type_of_transaction == 'coin' and (self.account_space[trans.sender_address]['id']!= '0' or trans.nonce >= len(self.ring)) else 0 #bootstrap node isn't charged a fee when executing the genesis transactions
-                
-                if self.chain.blocks[-1].validator == self.wallet.public_key:
-                    if trans.type_of_transaction == 'coin' and trans.receiver_address != '0':
-                        self.wallet.balance += flag * 0.03 * int(trans.to_dict()['amount'])
-                    elif trans.type_of_transaction == 'message':
-                        self.wallet.balance += int(trans.to_dict()['amount'])
-                
-                if trans.sender_address == self.wallet.public_key and trans.receiver_address != '0': #regural transaction
-                    self.wallet.balance -= int(trans.to_dict()['amount']) * (1 + flag * 0.03)
-                
-                elif trans.sender_address == self.wallet.public_key and trans.receiver_address == '0': #transaction is stake(amount)
-                    self.wallet.balance += self.stake_amount
-                    self.stake_amount = int(trans.to_dict()['amount'])
-                    self.wallet.balance -= self.stake_amount
+        async with self.block_lock:
+            buffer_deque = deque()
 
-                if trans.receiver_address == self.wallet.public_key:
-                    if trans.type_of_transaction == 'coin': #regular transaction
+            while self.pending_transactions:
+                trans = self.pending_transactions.popleft()
+
+                if any(trans.transaction_id == transaction.transaction_id for transaction in self.chain.blocks[-1].transactions):
+                    flag = 1 if trans.type_of_transaction == 'coin' and (self.account_space[trans.sender_address]['id']!= '0' or trans.nonce >= len(self.ring)) else 0
+
+                    if self.chain.blocks[-1].validator == self.wallet.public_key:
+                        if trans.type_of_transaction == 'coin' and trans.receiver_address != '0':
+                            self.wallet.balance += flag * 0.03 * int(trans.to_dict()['amount'])
+                        elif trans.type_of_transaction == 'message':
+                            self.wallet.balance += int(trans.to_dict()['amount'])
+
+                    if trans.sender_address == self.wallet.public_key and trans.receiver_address != '0':
+                        self.wallet.balance -= int(trans.to_dict()['amount']) * (1 + flag * 0.03)
+
+                    elif trans.sender_address == self.wallet.public_key and trans.receiver_address == '0':
+                        self.wallet.balance += self.stake_amount
+                        self.stake_amount = int(trans.to_dict()['amount'])
+                        self.wallet.balance -= self.stake_amount
+
+                    if trans.receiver_address == self.wallet.public_key and trans.type_of_transaction == 'coin':
                         self.wallet.balance += int(trans.to_dict()['amount'])
-                    
-                # Remove the transaction from the original transaction_pool
-                #self.transaction_pool.remove(trans)
-                self.pending_transactions.remove(trans)
-        
-        if self.chain.blocks[-1].validator == self.wallet.public_key:
-            self.account_space[self.wallet.public_key]['balance'] = self.wallet.balance
-    
+                else:
+                    buffer_deque.append(trans)
+
+            while buffer_deque:
+                self.pending_transactions.appendleft(buffer_deque.pop())
+
+            if self.chain.blocks[-1].validator == self.wallet.public_key:
+                self.account_space[self.wallet.public_key]['balance'] = self.wallet.balance
+
+
+
+
 
     async def update_soft_state(self,transaction):
-        flag = 1 if transaction['type_of_transaction'] == 'coin' and transaction['recipient_address'] != '0'  and (self.account_space[transaction['sender_address']]['id'] != 0 or transaction['nonce'] >= len(self.ring) ) else 0
-        message_flag = 0 if transaction['type_of_transaction'] == 'message' else 1
+        async with self.block_lock:
+            flag = 1 if transaction['type_of_transaction'] == 'coin' and transaction['recipient_address'] != '0'  and (self.account_space[transaction['sender_address']]['id'] != 0 or transaction['nonce'] >= len(self.ring) ) else 0
+            message_flag = 0 if transaction['type_of_transaction'] == 'message' else 1
 
-        if transaction['recipient_address'] != '0':
-            self.account_space[transaction['sender_address']]['balance'] -= int(transaction['amount']) * (1 + 0.03 * flag)
-            self.account_space[transaction['recipient_address']]['balance'] += int(transaction['amount']) * message_flag
+            if transaction['recipient_address'] != '0':
+                self.account_space[transaction['sender_address']]['balance'] -= int(transaction['amount']) * (1 + 0.03 * flag)
+                self.account_space[transaction['recipient_address']]['balance'] += int(transaction['amount']) * message_flag
 
-        else:
-            self.account_space[transaction['sender_address']]['balance'] += self.account_space[transaction['sender_address']]['stake']
-            self.account_space[transaction['sender_address']]['stake'] = int(transaction['amount'])
-            self.account_space[transaction['sender_address']]['balance'] -= self.account_space[transaction['sender_address']]['stake']
-        
+            else:
+                self.account_space[transaction['sender_address']]['balance'] += self.account_space[transaction['sender_address']]['stake']
+                self.account_space[transaction['sender_address']]['stake'] = int(transaction['amount'])
+                self.account_space[transaction['sender_address']]['balance'] -= self.account_space[transaction['sender_address']]['stake']
+            
 
 
     
@@ -286,10 +293,11 @@ class Node:
         """Broadcasts a block to the network using WebSockets."""
      
         for node in self.ring:
-                asyncio.create_task(self.send_block(node, block))
+                if node['id'] != self.id:
+                    asyncio.create_task(self.send_block(node, block))
           
         
-        response = await self.send_block({'ip':self.ip,'port':self.port}, block)
+        response = await self.new_block(block.to_dict())
 
     
         print("Responses from self broadcast_block:", response)
@@ -323,35 +331,45 @@ class Node:
 
     async def mint_block(self):
 
-        await self.chain.mint_block(self)
+        self.chain.mint_block(self)
         validator = await self.current_block.select_validator(self)
         
         block_to_be_broadcasted = self.current_block
-        self.current_block = None
+        # self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
         
         if self.id == validator['id']:
             print(f"I {self.id} am the validator")
             await self.broadcast_block(block_to_be_broadcasted)
-        
+
+        else:
+            self.pending_transactions.extendleft(reversed(block_to_be_broadcasted.transactions))
+
+
 
 
     async def add_transaction_to_block(self, transaction):
         """Adds a transaction to a block, check if minting is needed and update
         the wallet and balances of participating nodes"""
 
-        if self.current_block is None:
-            self.pending_transactions.append(transaction)
-            return {'status': 200, 'message': 'Block is full already minted'}
+        # if self.current_block is None:
+        #     self.pending_transactions.append(transaction)
+        #     return {'status': 200, 'message': 'Block is full already minted'}
 
         transaction_added = self.current_block.add_transaction(transaction)
-        print(f"Transaction added to block and curr length is {len(self.current_block.transactions)}")
+      
         if transaction_added:
-            self.pending_transactions.append(transaction)
-            return {'status': 200, 'message': 'Block is full and going to mint'}
+                self.pending_transactions.append(transaction)
+                if self.current_block.validator is None:
+                    return {'status': 200, 'message': 'Block is full and going to mint'}
+                else:
+                    return {'status': 200, 'message': 'Block is full and already minted'}
+
+        
         elif not transaction_added:
             await self.update_soft_state(transaction.to_dict())
-            if transaction in self.pending_transactions:
-                self.pending_transactions.remove(transaction)
+            # if transaction in self.pending_transactions:
+            #     self.pending_transactions.remove(transaction)
+            print(f"Transaction added to block and curr length is {len(self.current_block.transactions)}")
             return {'status': 200, 'message': 'Transaction added to block'}
       
 
@@ -361,15 +379,17 @@ class Node:
         transaction = data
         print("I am in 'receive_transactions'")
 
-        if self.chain.blocks[-1].index == 1 and self.current_block is None:
-              self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
+        if self.current_block is None:
+            self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
+        # if self.chain.blocks[-1].index == 1 and self.current_block is None:
+        #       self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
 
         try:
 
               if await self.validate_transaction(Transaction.from_dict(transaction)):
               
                 transaction = Transaction.from_dict(transaction)
-                self.transaction_pool.append(transaction)
+                # self.transaction_pool.append(transaction)
                 res = await self.add_transaction_to_block(transaction)
 
                
@@ -386,3 +406,49 @@ class Node:
         except Exception as e:
             print(f"An error occurred: {e}")
             return {'valid': False, 'message': 'An error occurred'}
+        
+
+
+
+    async def new_block(self,data):
+         # if node.chain.blocks[-1].current_hash != data['data']['hash']:
+        validator = await Block.from_dict(data).select_validator(self)
+        print(f"##############THE VALIDATOR for {Block.from_dict(data).index} IS {validator['id']}##############")
+        print(f"##############PREVIOUS HASH: {self.chain.blocks[-1].current_hash[:20]}##############")
+        if await self.validate_block(Block.from_dict(data)):
+
+            
+            print(f"########### NEW BLOCK RECEIVED with index {Block.from_dict(data).index} ###########")
+            self.chain.add_block(Block.from_dict(data))
+            await self.update_balance()
+
+
+
+
+            # node.current_block = None
+            self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
+
+            for _ in range(5):
+                if not self.pending_transactions:
+                    break
+                trans = self.pending_transactions.popleft()
+                await self.add_transaction_to_block(trans)
+
+
+
+        
+            #await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
+            return {'status':200,'message':'Block added to chain', 'pk':self.wallet.public_key ,'new_balance':self.wallet.balance , 'new_stake':self.stake_amount}
+        
+        else:
+            if Block.from_dict(data).previous_hash != self.chain.blocks[-1].current_hash:
+                print(f"#########BLOCK INVALID - HASH MISMATCH ###########")
+
+                # print(f"Expected previous hash: {node.chain.blocks[-1].previous_hash} but got {Block.from_dict(data['data']).previous_hash} ########")
+                # print(f"Last block index: {node.chain.blocks[-1].index} and received block index {Block.from_dict(data['data']).index}########")
+            elif Block.from_dict(data['data']).validator != (await Block.from_dict(data).select_validator(self))['pk']:
+                print(f"#########BLOCK INVALID VALIDATOR PROBLEM INDEX {Block.from_dict(data).index} ###########")
+                validator = await Block.from_dict(data['data']).select_validator(self)
+                print(f"Expected validator: {validator['pk']} but got {Block.from_dict(data).validator} ########")
+        
+            return {'status':400,'message':'Block Invalid'}
