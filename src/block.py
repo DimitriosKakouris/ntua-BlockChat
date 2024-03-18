@@ -24,11 +24,14 @@ class Block:
         print("I am in 'add_transaction'")
         self.transactions.append(transaction)
         if len(self.transactions) == self.capacity:
+            #self.transactions.remove(transaction)
+            return 1
+        elif len(self.transactions) > self.capacity:
             self.transactions.remove(transaction)
-            return True
+            return 2
         # print(f"Transaction added to block and curr length is {len(self.transactions)}")
         else:
-            return False
+            return 0
     
     def hash_block(self):
         block_json = {

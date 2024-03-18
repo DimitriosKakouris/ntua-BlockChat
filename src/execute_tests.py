@@ -7,7 +7,7 @@ from block import block_capacity
 
 total_time = 0
 num_transactions = 0
-staking_amount = 0
+staking_amount = 10
 
 async def execute_transactions(node_id, IP_ADDRESS, PORT):
     """This function sends the transactions of the text file"""
@@ -23,7 +23,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
     transaction_file = f'./input/small_trans{node_id}.txt'
     # blockchain_timestamps = []
 
-    # await asyncio.sleep(1)
+    await asyncio.sleep(20)
     
     with open(transaction_file, 'r') as f:
         for i, line in enumerate(f):

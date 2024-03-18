@@ -84,7 +84,7 @@ async def register_node():
             #await node.send_initial_bcc()
             print('After send_initial_bcc')
             await test_ready_event.wait()
-            await execute_tests.execute_transactions(node.id, node.ip, node.port)
+            #await execute_tests.execute_transactions(node.id, node.ip, node.port)
 
         else: 
             # Gather all unicast tasks
@@ -99,7 +99,7 @@ async def register_node():
               
 
             await test_ready_event.wait()
-            await execute_tests.execute_transactions(node.id, node.ip, node.port)
+            #await execute_tests.execute_transactions(node.id, node.ip, node.port)
                 # await execute_tests.execute_transactions()
 
     
@@ -222,11 +222,14 @@ async def handler(websocket):
 
         elif data['action'] == 'get_balance':
             balance = node.account_space[node.wallet.public_key]['balance']
+            stake_amount = node.account_space[node.wallet.public_key]['stake']
+            confirmed_balance = node.wallet.balance
+            confirmed_stake = node.stake_amount
             #balance = node.wallet.balance
             wallet_address = node.wallet.public_key
             node_id = node.id
 
-            await websocket.send(json.dumps({'Node ID':node_id,'chain':node.chain.to_dict(),'wallet_address':wallet_address,'balance': balance, 'stake':node.stake_amount}))
+            await websocket.send(json.dumps({'Node ID':node_id,'chain':node.chain.to_dict(),'wallet_address':wallet_address,'balance': balance, 'stake':stake_amount, 'confirmed_balance':confirmed_balance, 'confirmed_stake':confirmed_stake}))
 
         elif data['action'] == 'view_last_transactions':
             last_validated_block = node.chain.blocks[-1].view_block()
@@ -242,6 +245,7 @@ async def handler(websocket):
 
         elif data['action'] == 'get_ring_length':
             await websocket.send(json.dumps({'ring_len': len(node.ring)}))
+
    
 
         elif data['action'] == 'update_soft_state':
@@ -274,9 +278,9 @@ async def handler(websocket):
                         'id': ring_node['id'],
                         'port': ring_node['port'],
                         'balance': total_nodes * 1000,
-                        #'valid_balance': 3000,
+                        'valid_balance': total_nodes * 1000,
                         'stake': 0,
-                        #'valid_stake': 0
+                        'valid_stake': 0
                     }
                 else:
                     node.account_space[ring_node['public_key']] = {
@@ -285,9 +289,9 @@ async def handler(websocket):
                         'port': ring_node['port'],
                         #'balance': 1000,
                         'balance': 0,
-                        #'valid_balance': 1000,
+                        'valid_balance': 0,
                         'stake': 0,
-                        #'valid_stake': 0
+                        'valid_stake': 0
                     }
             await websocket.send(json.dumps({'message': "Account space initialized"}))
 
@@ -361,7 +365,8 @@ async def handler(websocket):
                     
                     print(f"########### NEW BLOCK RECEIVED with index {Block.from_dict(data['data']).index} ###########")
                     node.chain.add_block(Block.from_dict(data['data']))
-                    await node.update_balance()
+                    # await node.update_balance(Block.from_dict(data['data']).transactions)
+                    await node.update_final_soft_state(data['data'])
 
 
 

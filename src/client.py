@@ -113,6 +113,8 @@ async def client():
             response = await send_websocket_request('get_balance', {}, ip_address, port)
             print("Balance:", response['balance'])
             print("Amount reserved for staking:", response['stake'])
+            print("Confirmed balance:", response['confirmed_balance'])
+            print("Confirmed amount reserved for staking:", response['confirmed_stake'])
 
         elif choice == 'Help':
             # Display help text
