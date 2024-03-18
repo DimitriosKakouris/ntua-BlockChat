@@ -20,7 +20,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
 
     global total_time
     global num_transactions
-    transaction_file = f'./input/trans{node_id}.txt'
+    transaction_file = f'./input/small_trans{node_id}.txt'
     # blockchain_timestamps = []
 
     # await asyncio.sleep(1)

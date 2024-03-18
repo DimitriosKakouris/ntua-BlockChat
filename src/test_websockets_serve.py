@@ -73,6 +73,7 @@ async def register_node():
             genesis_block.validator = 0
             genesis_block.transactions.append(transaction)
             node.chain.add_block(genesis_block)
+            node.current_block = Block(node.chain.blocks[-1].index + 1, node.chain.blocks[-1].current_hash)
             # print("Genesis block added to chain")
             print("Bootstrap node waiting for other nodes to be ready...")
             await bootstrap_ready_event.wait()
@@ -229,6 +230,8 @@ async def handler(websocket):
             last_validated_block = node.chain.blocks[-1].view_block()
             await websocket.send(json.dumps(last_validated_block))
 
+        #elif data['action'] == ''
+
         elif data['action'] == 'view_last_messages':
             last_validated_block = node.chain.blocks[-1].view_block()
             messages = [transaction['message'] for transaction in last_validated_block['transactions'] if transaction['type_of_transaction'] == 'message' and transaction['recipient_address'] == node.wallet.public_key]
@@ -318,7 +321,8 @@ async def handler(websocket):
             if await node.validate_transaction(Transaction.from_dict(transaction)):
               
                 transaction = Transaction.from_dict(transaction)
-                node.transaction_pool.append(transaction)
+                node.pending_transactions.append(transaction)
+                #node.transaction_pool.append(transaction)
                 res = await node.add_transaction_to_block(transaction)
 
                
@@ -333,7 +337,8 @@ async def handler(websocket):
 
                     
             else:
-                
+                if Transaction.from_dict(transaction) in node.pending_transactions:
+                    node.pending_transactions.remove(Transaction.from_dict(transaction))
                 await websocket.send(json.dumps({'message':'Transaction Invalid'}))
                 
         

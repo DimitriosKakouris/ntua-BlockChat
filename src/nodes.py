@@ -165,7 +165,8 @@ class Node:
 
 
     async def update_balance(self):
-        transaction_pool_copy = self.transaction_pool.copy()
+        transaction_pool_copy = self.pending_transactions.copy()
+        #transaction_pool_copy = self.transaction_pool.copy()
         for trans in transaction_pool_copy:
             if any(trans.transaction_id == transaction.transaction_id for transaction in self.chain.blocks[-1].transactions):
                 
@@ -190,7 +191,8 @@ class Node:
                         self.wallet.balance += int(trans.to_dict()['amount'])
                     
                 # Remove the transaction from the original transaction_pool
-                self.transaction_pool.remove(trans)
+                #self.transaction_pool.remove(trans)
+                self.pending_transactions.remove(trans)
         
         if self.chain.blocks[-1].validator == self.wallet.public_key:
             self.account_space[self.wallet.public_key]['balance'] = self.wallet.balance
@@ -232,7 +234,7 @@ class Node:
         """
 
         response = await send_websocket_request('update_chain', self.chain.to_dict(), ring_node['ip'], ring_node['port'])
-     
+        self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
         return response
     
 
@@ -348,6 +350,8 @@ class Node:
             return {'status': 200, 'message': 'Block is full and going to mint'}
         elif not transaction_added:
             await self.update_soft_state(transaction.to_dict())
+            if transaction in self.pending_transactions:
+                self.pending_transactions.remove(transaction)
             return {'status': 200, 'message': 'Transaction added to block'}
       
 
