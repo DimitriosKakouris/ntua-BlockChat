@@ -25,7 +25,8 @@ class Node:
         self.stake_amount = 0
         self.account_space = {}
         self.pending_transactions = deque()
-        self.block_lock = asyncio.Lock()
+        self.block_buffer = {}
+        
         
 
 
@@ -45,7 +46,10 @@ class Node:
       
      
         return node
+    
 
+
+   
     
 
     async def stake(self, amount):
@@ -54,6 +58,7 @@ class Node:
         The node can increase or decrease its stake, within the limits of its available balance.
         """
         return await self.create_transaction('0', "coin", amount)
+    
 
  
 
@@ -549,45 +554,59 @@ class Node:
 
 
     async def new_block(self,data):
-         # if node.chain.blocks[-1].current_hash != data['data']['hash']:
-        # async with self.chain.blockchain_lock:
+      
+        # if node.chain.blocks[-1].current_hash != data['data']['hash']:
+        async with self.chain.blockchain_lock:
+            block = Block.from_dict(data)
             validator = await Block.from_dict(data).select_validator(self)
             print(f"##############THE VALIDATOR for {Block.from_dict(data).index} IS {validator['id']}##############")
             print(f"##############PREVIOUS HASH: {self.chain.blocks[-1].current_hash[:20]}##############")
-            if await self.validate_block(Block.from_dict(data)):
+            
+            if block.index > len(self.chain.blocks)+1:
+            # If the block's index is higher than the blockchain length, add it to the buffer
+                self.block_buffer[block.index] = block
+                print(f"##############BLOCK with {block.index} BUFFERED##############")
+
+            else:
+                if await self.validate_block(Block.from_dict(data)):
+                    print(f"########### NEW BLOCK RECEIVED with index {Block.from_dict(data).index} ###########")
+                   
+                    buff_blocks_added = await self.chain.add_block(Block.from_dict(data),self)
+                    buff_blocks_added.append(data)
+
+                    for buff_block in buff_blocks_added:    
+                        await self.update_final_soft_state(buff_block)
 
                 
-                print(f"########### NEW BLOCK RECEIVED with index {Block.from_dict(data).index} ###########")
-                self.chain.add_block(Block.from_dict(data))
-                # await self.update_balance(Block.from_dict(data).transactions) #Block.from_dict(data).transactions
-                await self.update_final_soft_state(data)
+                  
+
+                
+                    self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
+
+                    for _ in range(block_capacity):
+                        if not self.pending_transactions:
+                            break
+                        trans = self.pending_transactions.popleft()
+                        await self.add_transaction_to_block(trans)
 
 
 
-                # node.current_block = None
-                self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
-                print_pending_transactions = [i.to_dict() for i in self.pending_transactions]
-                print("Pending transactions: ", print_pending_transactions)
-                for _ in range(block_capacity):
-                    if not self.pending_transactions:
-                        break
-                    trans = self.pending_transactions.popleft()
-                    await self.add_transaction_to_block(trans)
+                
+                    
+                    return {'status':200,'message':'Block added to chain', 'pk':self.wallet.public_key ,'new_balance':self.wallet.balance , 'new_stake':self.stake_amount}
 
 
 
-            
-                #await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
-                return {'status':200,'message':'Block added to chain', 'pk':self.wallet.public_key ,'new_balance':self.wallet.balance , 'new_stake':self.stake_amount}
-            
-            else:
-                if Block.from_dict(data).previous_hash != self.chain.blocks[-1].current_hash:
-                    print(f"#########BLOCK INVALID - HASH MISMATCH ###########")
+                else:
+                    if Block.from_dict(data).previous_hash != self.chain.blocks[-1].current_hash:
+                        print(f"#########BLOCK INVALID - HASH MISMATCH ###########")
 
-                    # print(f"Expected previous hash: {node.chain.blocks[-1].previous_hash} but got {Block.from_dict(data['data']).previous_hash} ########")
-                    # print(f"Last block index: {node.chain.blocks[-1].index} and received block index {Block.from_dict(data['data']).index}########")
-                elif Block.from_dict(data['data']).validator != (validator['pk']):
-                    print(f"#########BLOCK INVALID VALIDATOR PROBLEM INDEX {Block.from_dict(data).index} ###########")
-                    print(f"Expected validator: {validator['pk']} but got {Block.from_dict(data).validator} ########")
-            
-                return {'status':400,'message':'Block Invalid'}
+                        # print(f"Expected previous hash: {node.chain.blocks[-1].previous_hash} but got {Block.from_dict(data['data']).previous_hash} ########")
+                        # print(f"Last block index: {node.chain.blocks[-1].index} and received block index {Block.from_dict(data['data']).index}########")
+                    elif Block.from_dict(data).validator != (validator['pk']):
+                        print(f"#########BLOCK INVALID VALIDATOR PROBLEM INDEX {Block.from_dict(data).index} ###########")
+                        # validator = await Block.from_dict(data['data']).select_validator(node)
+                        print(f"Expected validator: {validator['pk']} but got {Block.from_dict(data).validator} ########")
+                
+                    return {'status':400,'message':'Block Invalid'}
+

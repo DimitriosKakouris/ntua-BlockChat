@@ -75,7 +75,7 @@ async def register_node():
         
             genesis_block.validator = 0
             genesis_block.transactions.append(transaction)
-            node.chain.add_block(genesis_block)
+            await node.chain.add_block(genesis_block,node)
             # node.current_block = Block(node.chain.blocks[-1].index + 1, node.chain.blocks[-1].current_hash)
             # print("Genesis block added to chain")
             print("Bootstrap node waiting for other nodes to be ready...")
@@ -361,79 +361,75 @@ async def handler(websocket):
 
         elif data['action'] == 'new_block':
                 # if node.chain.blocks[-1].current_hash != data['data']['hash']:
-                # async with node.chain.blockchain_lock:
+                async with node.chain.blockchain_lock:
+                    block = Block.from_dict(data['data'])
                     validator = await Block.from_dict(data['data']).select_validator(node)
                     print(f"##############THE VALIDATOR for {Block.from_dict(data['data']).index} IS {validator['id']}##############")
                     print(f"##############PREVIOUS HASH: {node.chain.blocks[-1].current_hash[:20]}##############")
-                    if await node.validate_block(Block.from_dict(data['data'])):
-
-                        
-                        print(f"########### NEW BLOCK RECEIVED with index {Block.from_dict(data['data']).index} ###########")
-                        node.chain.add_block(Block.from_dict(data['data']))
-                        # await node.update_balance(Block.from_dict(data['data']).transactions)
-                        await node.update_final_soft_state(data['data'])
-
-
-
-
-                        # node.current_block = None
-                        node.current_block = Block(node.chain.blocks[-1].index + 1, node.chain.blocks[-1].current_hash)
-                        print_pending_transactions = [i.to_dict() for i in node.pending_transactions]
-                        print("Pending transactions: ", print_pending_transactions)
-                        for _ in range(block_capacity):
-                            if not node.pending_transactions:
-                                break
-                            trans = node.pending_transactions.popleft()
-                            await node.add_transaction_to_block(trans)
-
-
-
-                    
-                        #await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
-                        await websocket.send(json.dumps({'status':200,'message':'Block added to chain', 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
-
-
+                   
+                    if block.index > len(node.chain.blocks)+1:
+                    # If the block's index is higher than the blockchain length, add it to the buffer
+                        node.block_buffer[block.index] = block
+                        print(f"##############BLOCK with {block.index} BUFFERED##############")
 
                     else:
-                        if Block.from_dict(data['data']).previous_hash != node.chain.blocks[-1].current_hash:
-                            print(f"#########BLOCK INVALID - HASH MISMATCH ###########")
+                        if await node.validate_block(Block.from_dict(data['data'])):
+                            print(f"########### NEW BLOCK RECEIVED with index {Block.from_dict(data['data']).index} ###########")
+                            buff_blocks_added = await node.chain.add_block(Block.from_dict(data['data']),node)
+                            buff_blocks_added.append(data['data'])
 
-                            # print(f"Expected previous hash: {node.chain.blocks[-1].previous_hash} but got {Block.from_dict(data['data']).previous_hash} ########")
-                            # print(f"Last block index: {node.chain.blocks[-1].index} and received block index {Block.from_dict(data['data']).index}########")
-                        elif Block.from_dict(data['data']).validator != (validator['pk']):
-                            print(f"#########BLOCK INVALID VALIDATOR PROBLEM INDEX {Block.from_dict(data['data']).index} ###########")
-                            # validator = await Block.from_dict(data['data']).select_validator(node)
-                            print(f"Expected validator: {validator['pk']} but got {Block.from_dict(data['data']).validator} ########")
-                    
-                        await websocket.send(json.dumps({'status':400,'message':'Block Invalid'}))
+                            for buff_block in buff_blocks_added:    
+                                await node.update_final_soft_state(buff_block)
+
+                        
+                            node.current_block = Block(node.chain.blocks[-1].index + 1, node.chain.blocks[-1].current_hash)
+                        
+                            for _ in range(block_capacity):
+                                if not node.pending_transactions:
+                                    break
+                                trans = node.pending_transactions.popleft()
+                                await node.add_transaction_to_block(trans)
+
+
+
+                        
+                         
+                            await websocket.send(json.dumps({'status':200,'message':'Block added to chain', 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
+
+
+
+                        else:
+                            if Block.from_dict(data['data']).previous_hash != node.chain.blocks[-1].current_hash:
+                                print(f"#########BLOCK INVALID - HASH MISMATCH ###########")
+
+                                # print(f"Expected previous hash: {node.chain.blocks[-1].previous_hash} but got {Block.from_dict(data['data']).previous_hash} ########")
+                                # print(f"Last block index: {node.chain.blocks[-1].index} and received block index {Block.from_dict(data['data']).index}########")
+                            elif Block.from_dict(data['data']).validator != (validator['pk']):
+                                print(f"#########BLOCK INVALID VALIDATOR PROBLEM INDEX {Block.from_dict(data['data']).index} ###########")
+                                # validator = await Block.from_dict(data['data']).select_validator(node)
+                                print(f"Expected validator: {validator['pk']} but got {Block.from_dict(data['data']).validator} ########")
+                        
+                            await websocket.send(json.dumps({'status':400,'message':'Block Invalid'}))
 
         
-        # elif data['action'] == 'get_last_block_timestamp':
-        #     timestamp = node.chain.blocks[-1].timestamp
-        #     await websocket.send(json.dumps({'timestamp':timestamp}))
+      
                 
         
         elif data['action'] == 'get_block_timestamps':
             timestamps = [block.current_hash[:20] for block in node.chain.blocks]
             await websocket.send(json.dumps({'timestamps':timestamps}))
 
-     
-        # elif data['action'] == 'get_fees':
-
-        #     fees = data['data']['fees']
-        #     node.wallet.balance += fees
-
-        #     await websocket.send(json.dumps({'message': "Fees received"}))
 
 
 
 # Start the WebSocket server
-import execute_tests 
+
 async def main():
     async with websockets.serve(handler, IP_ADDRESS, PORT,ping_interval=None):
         print(f"Server started at ws://{IP_ADDRESS}:{PORT}")
         
         await register_node()  # Register the node with the bootstrap node
+        # asyncio.create_task(node.process_buffered_blocks())
 
         # await initialization_event.wait()
     

@@ -8,6 +8,7 @@ class Blockchain:
         #block = Block()
         self.blocks = [] #block.genesis()
         self.blockchain_lock = asyncio.Lock()
+        # self.block_buffer = {}
         
 
     
@@ -23,9 +24,24 @@ class Blockchain:
             self.blocks.append(block)
         return self
 
-    def add_block(self, block):
-       
+    async def add_block(self, block, node):
+        buff_blocks_added = []
+
         self.blocks.append(block)
+        
+        while len(self.blocks)+1 in node.block_buffer:
+            next_block = node.block_buffer.pop(len(self.blocks)+1)
+            print(f"Popping block {next_block.index}")
+            if await node.validate_block(next_block):
+                print(f"Adding block from buffer {next_block.index}")
+                self.blocks.append(next_block)
+                buff_blocks_added.append(next_block.to_dict())
+            else:
+                break
+
+        return buff_blocks_added
+    
+
 
     def size(self):
         return len(self.blocks)
