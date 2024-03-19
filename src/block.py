@@ -96,7 +96,7 @@ class Block:
         
         total_stake_sum = 0
         for node_stake in total_stake:
-            total_stake_sum += int(node_stake['stake'])
+            total_stake_sum += int(node_stake['valid_stake'])
 
         seed = int(self.previous_hash, 16)  # Convert hex hash to an integer
         
@@ -107,7 +107,7 @@ class Block:
 
         current = 0
         for node_stake in total_stake:
-            current += int(node_stake['stake'])
+            current += int(node_stake['valid_stake'])
             if current >= selection_point:
               
                 return node_stake 

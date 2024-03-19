@@ -450,14 +450,16 @@ class Node:
     async def mint_block(self):
 
         self.chain.mint_block(self)
-        validator = await self.current_block.select_validator(self)
+        async with self.chain.blockchain_lock:
+            validator = await self.current_block.select_validator(self)
         
         block_to_be_broadcasted = self.current_block
         # self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
         
         if self.id == validator['id']:
-            print(f"I {self.id} am the validator")
-            print("Block to be broadcasted:", block_to_be_broadcasted.to_dict())
+            print(f"I {self.id} am the validator, and I am broadcasting block {block_to_be_broadcasted.index}")
+            
+            # print("Block to be broadcasted:", block_to_be_broadcasted.to_dict())
             await self.broadcast_block(block_to_be_broadcasted)
             
             # real_balances = self.account_space.copy()
@@ -548,44 +550,44 @@ class Node:
 
     async def new_block(self,data):
          # if node.chain.blocks[-1].current_hash != data['data']['hash']:
-        validator = await Block.from_dict(data).select_validator(self)
-        print(f"##############THE VALIDATOR for {Block.from_dict(data).index} IS {validator['id']}##############")
-        print(f"##############PREVIOUS HASH: {self.chain.blocks[-1].current_hash[:20]}##############")
-        if await self.validate_block(Block.from_dict(data)):
+        # async with self.chain.blockchain_lock:
+            validator = await Block.from_dict(data).select_validator(self)
+            print(f"##############THE VALIDATOR for {Block.from_dict(data).index} IS {validator['id']}##############")
+            print(f"##############PREVIOUS HASH: {self.chain.blocks[-1].current_hash[:20]}##############")
+            if await self.validate_block(Block.from_dict(data)):
+
+                
+                print(f"########### NEW BLOCK RECEIVED with index {Block.from_dict(data).index} ###########")
+                self.chain.add_block(Block.from_dict(data))
+                # await self.update_balance(Block.from_dict(data).transactions) #Block.from_dict(data).transactions
+                await self.update_final_soft_state(data)
+
+
+
+                # node.current_block = None
+                self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
+                print_pending_transactions = [i.to_dict() for i in self.pending_transactions]
+                print("Pending transactions: ", print_pending_transactions)
+                for _ in range(block_capacity):
+                    if not self.pending_transactions:
+                        break
+                    trans = self.pending_transactions.popleft()
+                    await self.add_transaction_to_block(trans)
+
+
 
             
-            print(f"########### NEW BLOCK RECEIVED with index {Block.from_dict(data).index} ###########")
-            self.chain.add_block(Block.from_dict(data))
-            # await self.update_balance(Block.from_dict(data).transactions) #Block.from_dict(data).transactions
-            await self.update_final_soft_state(data)
+                #await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
+                return {'status':200,'message':'Block added to chain', 'pk':self.wallet.public_key ,'new_balance':self.wallet.balance , 'new_stake':self.stake_amount}
+            
+            else:
+                if Block.from_dict(data).previous_hash != self.chain.blocks[-1].current_hash:
+                    print(f"#########BLOCK INVALID - HASH MISMATCH ###########")
 
-
-
-            # node.current_block = None
-            self.current_block = Block(self.chain.blocks[-1].index + 1, self.chain.blocks[-1].current_hash)
-            print_pending_transactions = [i.to_dict() for i in self.pending_transactions]
-            print("Pending transactions: ", print_pending_transactions)
-            for _ in range(block_capacity):
-                if not self.pending_transactions:
-                    break
-                trans = self.pending_transactions.popleft()
-                await self.add_transaction_to_block(trans)
-
-
-
-        
-            #await websocket.send(json.dumps({'status':200,'message':'Block added to chain','fees':fees_sum, 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
-            return {'status':200,'message':'Block added to chain', 'pk':self.wallet.public_key ,'new_balance':self.wallet.balance , 'new_stake':self.stake_amount}
-        
-        else:
-            if Block.from_dict(data).previous_hash != self.chain.blocks[-1].current_hash:
-                print(f"#########BLOCK INVALID - HASH MISMATCH ###########")
-
-                # print(f"Expected previous hash: {node.chain.blocks[-1].previous_hash} but got {Block.from_dict(data['data']).previous_hash} ########")
-                # print(f"Last block index: {node.chain.blocks[-1].index} and received block index {Block.from_dict(data['data']).index}########")
-            elif Block.from_dict(data['data']).validator != (await Block.from_dict(data).select_validator(self))['pk']:
-                print(f"#########BLOCK INVALID VALIDATOR PROBLEM INDEX {Block.from_dict(data).index} ###########")
-                validator = await Block.from_dict(data['data']).select_validator(self)
-                print(f"Expected validator: {validator['pk']} but got {Block.from_dict(data).validator} ########")
-        
-            return {'status':400,'message':'Block Invalid'}
+                    # print(f"Expected previous hash: {node.chain.blocks[-1].previous_hash} but got {Block.from_dict(data['data']).previous_hash} ########")
+                    # print(f"Last block index: {node.chain.blocks[-1].index} and received block index {Block.from_dict(data['data']).index}########")
+                elif Block.from_dict(data['data']).validator != (validator['pk']):
+                    print(f"#########BLOCK INVALID VALIDATOR PROBLEM INDEX {Block.from_dict(data).index} ###########")
+                    print(f"Expected validator: {validator['pk']} but got {Block.from_dict(data).validator} ########")
+            
+                return {'status':400,'message':'Block Invalid'}

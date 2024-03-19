@@ -7,7 +7,7 @@ class Blockchain:
     def __init__(self):
         #block = Block()
         self.blocks = [] #block.genesis()
-        # self.blockchain_lock = asyncio.Lock()
+        self.blockchain_lock = asyncio.Lock()
         
 
     
@@ -24,8 +24,8 @@ class Blockchain:
         return self
 
     def add_block(self, block):
-     
-            self.blocks.append(block)
+       
+        self.blocks.append(block)
 
     def size(self):
         return len(self.blocks)
