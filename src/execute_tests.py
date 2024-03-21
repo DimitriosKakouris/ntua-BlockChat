@@ -22,7 +22,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
 
         global total_time
         global num_transactions
-        transaction_file = f'./input/trans{node_id}.txt'
+        transaction_file = f'./testing/input/trans{node_id}.txt'
         # blockchain_timestamps = []
 
         # await asyncio.sleep(2)
@@ -66,8 +66,8 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
         print('Capacity: %d' %block_capacity)
         print('-----------------------------------')
 
-        os.makedirs('./results', exist_ok=True)
-        with open(f'./{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
+        os.makedirs('./testing/results', exist_ok=True)
+        with open(f'./testing/results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
             f.write('Final results for node %d\n' %node_id)
             f.write('Throughput: %f\n' %throughput)
             # f.write('Block time: %f\n' %block_time)
