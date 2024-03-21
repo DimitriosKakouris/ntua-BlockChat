@@ -1,7 +1,7 @@
 import inquirer
 import os
 import asyncio
-from websockets_serve import send_websocket_request
+from wsmanager import send_websocket_request
 import json
 
 from dotenv import load_dotenv
