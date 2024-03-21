@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Start WebSocket server in the background
-python /app/wserve.py  &
+python ./src/wserve.py  &
 
 # Execute CLI script in the foreground
-python /app/client.py  
+python ./src/client.py  
 
 # cd /app/frontend/blockchat_client npm build .
 

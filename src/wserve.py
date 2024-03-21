@@ -19,7 +19,6 @@ load_dotenv()
 command = "hostname --ip-address"
 result = subprocess.run(["hostname", "--ip-address"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 IP_ADDRESS = result.stdout.strip()
-# IP_ADDRESS = "10.0.0.5"
 PORT = 80
 total_nodes = int(os.getenv('TOTAL_NODES', 3))
 total_bcc = total_nodes * 1000
@@ -382,7 +381,8 @@ async def handler(websocket):
                 
         
         elif data['action'] == 'get_block_timestamps':
-            timestamps = [block.current_hash[:20] for block in node.chain.blocks]
+            timestamps = [block.timestamp for block in node.chain.blocks]
+            # timestamps = [block.current_hash[:20] for block in node.chain.blocks]
             await websocket.send(json.dumps({'blocks':timestamps}))
 
 
