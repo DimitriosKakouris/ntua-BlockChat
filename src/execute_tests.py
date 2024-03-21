@@ -66,8 +66,8 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
         print('Capacity: %d' %block_capacity)
         print('-----------------------------------')
 
-        os.makedirs('/app/results', exist_ok=True)
-        with open(f'/app/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
+        os.makedirs('./results', exist_ok=True)
+        with open(f'./{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
             f.write('Final results for node %d\n' %node_id)
             f.write('Throughput: %f\n' %throughput)
             # f.write('Block time: %f\n' %block_time)
