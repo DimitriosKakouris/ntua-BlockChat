@@ -497,23 +497,49 @@ class Node:
         #     self.pending_transactions.append(transaction)
         #     return {'status': 200, 'message': 'Block is full already minted'}
 
+        # if await self.validate_transaction(transaction):
+
         transaction_added = self.current_block.add_transaction(transaction)
-      
-        if transaction_added:
-                if transaction_added == 2:
-                    self.pending_transactions.append(transaction)
-                if self.current_block.validator is None:
-                    return {'status': 200, 'message': 'Block is full and going to mint'}
-                else:
-                    return {'status': 200, 'message': 'Block is full and already minted'}
+
+        if transaction_added == 2:
+            self.pending_transactions.append(transaction)
+
+
+            if self.current_block.validator is None:
+                return {'status': 200, 'message': 'Block is full and going to mint'}
+            else:
+                return {'status': 200, 'message': 'Block is full and already minted'}
+
+        elif transaction_added == 1:
+            if not await self.validate_transaction(transaction):
+                self.current_block.transactions.pop()
+                return {'status': 400, 'message': 'Transaction Invalid'}
+            
+            if self.current_block.validator is None:
+                return {'status': 200, 'message': 'Block is full and going to mint'}
+            else:
+                return {'status': 200, 'message': 'Block is full and already minted'}
+
+    
+        # if transaction_added and self.validate_transaction(transaction):
+        #         if transaction_added == 2:
+        #             self.pending_transactions.append(transaction)
+        #         if self.current_block.validator is None:
+        #             return {'status': 200, 'message': 'Block is full and going to mint'}
+        #         else:
+        #             return {'status': 200, 'message': 'Block is full and already minted'}
 
         
-        elif not transaction_added:
+        elif transaction_added == 0:
+            if not await self.validate_transaction(transaction):
+                self.current_block.transactions.pop()
+                return {'status': 400, 'message': 'Transaction Invalid'}
+            
             await self.update_soft_state(transaction.to_dict())
-            # if transaction in self.pending_transactions:
-            #     self.pending_transactions.remove(transaction)
+         
             print(f"Transaction added to block and curr length is {len(self.current_block.transactions)}")
             return {'status': 200, 'message': 'Transaction added to block'}
+  
       
 
 
@@ -529,22 +555,22 @@ class Node:
 
         try:
 
-              if await self.validate_transaction(Transaction.from_dict(transaction)):
+            #   if await self.validate_transaction(Transaction.from_dict(transaction)):
               
-                transaction = Transaction.from_dict(transaction)
-                # self.transaction_pool.append(transaction)
-                res = await self.add_transaction_to_block(transaction)
+            transaction = Transaction.from_dict(transaction)
+            # self.transaction_pool.append(transaction)
+            res = await self.add_transaction_to_block(transaction)
 
-               
-                if res['status'] == 200 and res['message'] == 'Block is full and going to mint':
-                    #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
-                     await self.mint_block()
-                     return res
-                    #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
-                return res
+            
+            if res['status'] == 200 and res['message'] == 'Block is full and going to mint':
+                #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
+                    await self.mint_block()
+                    return res
+                #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
+            return res
               
-              else:
-                return {'status': 400, 'message': 'Transaction Invalid'}
+            #   else:
+            #     return {'status': 400, 'message': 'Transaction Invalid'}
         
         except Exception as e:
             print(f"An error occurred: {e}")

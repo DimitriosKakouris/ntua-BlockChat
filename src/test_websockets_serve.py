@@ -333,28 +333,28 @@ async def handler(websocket):
                 node.current_block = Block(node.chain.blocks[-1].index + 1, node.chain.blocks[-1].current_hash)
          
 
-            if await node.validate_transaction(Transaction.from_dict(transaction)):
+            # if await node.validate_transaction(Transaction.from_dict(transaction)):
               
-                transaction = Transaction.from_dict(transaction)
-                # node.pending_transactions.append(transaction)
-                #node.transaction_pool.append(transaction)
-                res = await node.add_transaction_to_block(transaction)
+            transaction = Transaction.from_dict(transaction)
+            # node.pending_transactions.append(transaction)
+            #node.transaction_pool.append(transaction)
+            res = await node.add_transaction_to_block(transaction)
 
-               
-                if res['status'] == 200 and res['message'] == 'Block is full and going to mint':
-                    #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
-                     await node.mint_block()
-                     await websocket.send(json.dumps(res))
-                    #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
-                else:
+            
+            if res['status'] == 200 and res['message'] == 'Block is full and going to mint':
+                #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
+                    await node.mint_block()
                     await websocket.send(json.dumps(res))
+                #  await websocket.send(json.dumps({'valid':True,'message':'Block is full'}))
+            else:
+                await websocket.send(json.dumps(res))
        
 
                     
-            else:
-                # if Transaction.from_dict(transaction) in node.pending_transactions:
-                #     node.pending_transactions.remove(Transaction.from_dict(transaction))
-                await websocket.send(json.dumps({'message':'Transaction Invalid'}))
+            # else:
+            #     # if Transaction.from_dict(transaction) in node.pending_transactions:
+            #     #     node.pending_transactions.remove(Transaction.from_dict(transaction))
+            #     await websocket.send(json.dumps({'message':'Transaction Invalid'}))
                 
         
 

@@ -8,7 +8,7 @@ from block import block_capacity
 total_time = 0
 num_transactions = 0
 staking_amount = 10
-nodes_executing_transactions = 10
+nodes_executing_transactions = 3
 
 async def execute_transactions(node_id, IP_ADDRESS, PORT):
     """This function sends the transactions of the text file"""
@@ -22,7 +22,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
 
         global total_time
         global num_transactions
-        transaction_file = f'./input/trans{node_id}.txt'
+        transaction_file = f'./input/small_trans{node_id}.txt'
         # blockchain_timestamps = []
 
         # await asyncio.sleep(2)
