@@ -21,6 +21,8 @@ class Transaction:
         self.transaction_id = self.hash_transaction()
         self.signature = None
 
+
+
     def sign_transaction(self, private_key_string):
         """
         Sign the transaction with the sender's private key.
@@ -32,6 +34,8 @@ class Transaction:
         signer = pkcs1_15.new(private_key)
         h = SHA256.new(self.transaction_id.encode())
         self.signature = base64.b64encode(signer.sign(h)).decode() #TODO: may not need base64 encoding
+
+
 
     def verify_signature(self):
         """
@@ -45,6 +49,8 @@ class Transaction:
             return True
         except (ValueError, TypeError):
             return False
+
+
 
     def hash_transaction(self):
         """
@@ -62,6 +68,8 @@ class Transaction:
         h = SHA256.new(transaction_string.encode())
         return h.hexdigest()
     
+
+
     def to_dict(self):
         """
         Return the transaction as a dictionary.
@@ -76,6 +84,8 @@ class Transaction:
             'transaction_id': self.transaction_id,
             'signature': self.signature
         }
+    
+
     
     @classmethod
     def from_dict(cls, transaction_dict):

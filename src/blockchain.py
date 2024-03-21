@@ -5,10 +5,9 @@ import asyncio
 
 class Blockchain:
     def __init__(self):
-        #block = Block()
         self.blocks = [] #block.genesis()
         self.blockchain_lock = asyncio.Lock()
-        # self.block_buffer = {}
+    
         
 
     
@@ -24,9 +23,10 @@ class Blockchain:
             self.blocks.append(block)
         return self
 
+
+
     async def add_block(self, block, node):
         buff_blocks_added = []
-
         self.blocks.append(block)
         
         while len(self.blocks)+1 in node.block_buffer:
@@ -43,19 +43,18 @@ class Blockchain:
     
 
 
+
+
     def size(self):
         return len(self.blocks)
+
+
 
     def mint_block(self, node):
        
             start_time = time.time()
             current_block = node.current_block
-        
-
             current_block.validator = node.wallet.public_key
-
-        
-            
             # Calculate minting time
             minting_time = time.time() - start_time
 

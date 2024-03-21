@@ -1,16 +1,11 @@
-from asyncio import Lock
-import logging
 import websockets
 import json
 import asyncio
 
 connections = {}
 connections_self_update = {}
-# lock = asyncio.Lock()
-# lock_update = asyncio.Lock()
 
 
-locks =  {}
 async def send_websocket_request(action, data, ip, port):
     # Define the WebSocket URL
     ws_url = f"ws://{ip}:{port}"
@@ -22,23 +17,12 @@ async def send_websocket_request(action, data, ip, port):
         connections[ws_url] = websocket
 
 
-    #   # Get the lock for this WebSocket, or create a new one if it doesn't exist
-    lock = locks.get(ws_url)
-    if lock is None:
-        lock = asyncio.Lock()
-        locks[ws_url] = lock
-
-
     # Define the request
     request = {
         'action': action,
         'data': data
     }
-    # print(f"Sending request to {ws_url} with {websocket}: {request}")
-
-    # # #  # Acquire the lock
-    # async with lock:
-    # Send the request
+ 
     await websocket.send(json.dumps(request))
 
     try:
@@ -48,9 +32,13 @@ async def send_websocket_request(action, data, ip, port):
         print(f"No response from {ws_url} within timeout")
         return None
 
-# try:
     return json.loads(response)
    
+
+
+
+
+
 
 locks_update = {}
 async def send_websocket_request_update(action, data, ip, port):
@@ -91,6 +79,9 @@ async def send_websocket_request_update(action, data, ip, port):
     return json.loads(response)
   
 
+
+
+
 async def send_websocket_request_unique(action, data, ip, port):
     # Define the WebSocket URL
     ws_url = f"ws://{ip}:{port}"
@@ -102,8 +93,7 @@ async def send_websocket_request_unique(action, data, ip, port):
             'action': action,
             'data': data
         }
-        # print(f'##############NEW WEBSOCKET REQUEST: {websocket}#################3')
-
+      
         # Send the request
         await websocket.send(json.dumps(request))
 
