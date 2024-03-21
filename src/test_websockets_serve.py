@@ -16,7 +16,7 @@ node = Node()
 
 # Load environment variables and set up node details
 load_dotenv()
-IP_ADDRESS = "10.0.0.4"
+IP_ADDRESS = "10.0.0.5"
 PORT = 80
 total_nodes = int(os.getenv('TOTAL_NODES', 3))
 total_bcc = total_nodes * 1000
