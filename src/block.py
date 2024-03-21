@@ -3,7 +3,6 @@ import time
 import json
 from Crypto.Hash import SHA256
 from transaction import Transaction
-from wsmanager import send_websocket_request
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -24,12 +23,13 @@ class Block:
         print("I am in 'add_transaction'")
         self.transactions.append(transaction)
         if len(self.transactions) == self.capacity:
-            #self.transactions.remove(transaction)
             return 1
+        
+
         elif len(self.transactions) > self.capacity:
             self.transactions.remove(transaction)
             return 2
-        # print(f"Transaction added to block and curr length is {len(self.transactions)}")
+      
         else:
             return 0
     
@@ -91,7 +91,6 @@ class Block:
             node_stake['pk'] = pk
             total_stake.append(node_stake) # Has stake, ip, port, id
 
-        # print(total_stake[0]['stake'])
        
         
         total_stake_sum = 0
@@ -102,7 +101,7 @@ class Block:
         
         random.seed(seed)
 
-        # total_stake = sum(node.stake for node in nodes)
+      
         selection_point = random.uniform(0, total_stake_sum)
 
         current = 0
@@ -113,8 +112,6 @@ class Block:
                 return node_stake 
             
 
-       
 
-        # Fallback, should not reach here if implemented correctly
         raise Exception("Failed to select a validator. Check the implementation.")
 

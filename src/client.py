@@ -1,21 +1,21 @@
 import inquirer
 import os
 import asyncio
-from websockets_serve import send_websocket_request
+from wsmanager import send_websocket_request
 import json
 
 from dotenv import load_dotenv
 load_dotenv()
 ip_address = os.getenv('IP')
 port = os.getenv('PORT')
-
-# address = 'ws://' + str(ip_address) + ':' + str(port)
 address = f'ws://{ip_address}:{port}'
 
 
 # Helper function to clear the console
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
+
+
 
 def prompt_with_interrupt(questions):
     try:
@@ -24,12 +24,14 @@ def prompt_with_interrupt(questions):
         return None  # Indicate that an interrupt occurred
 
 
+
+
 # Command Line Interface client
 async def client():
     clear_console()
     running = True
     while running:
-        #clear_console()
+      
         menu = [ 
             inquirer.List('menu', 
             message= "BlockChat Client", 
@@ -43,6 +45,10 @@ async def client():
         choice = choice['menu']
         clear_console()
 
+
+
+
+
         if choice == 'New Transaction':
             questions = [
                 inquirer.Text(name='receiver', message='What is the Receiver ID?'),
@@ -52,17 +58,16 @@ async def client():
             if answers is None:
                 print("\nReturning to main menu...")
                 continue
-            
-            # Read the receiver ID from the text file
-            # with open(answers['receiver'], 'r') as file:
-            #     receiver = file.read().strip()
-            #     receiver = receiver.replace('\\n', '\n')
-
+      
             receiver = answers['receiver']
             # Send transaction request
             transaction_data = {'receiver': receiver, 'amount': answers['amount']}
             response = await send_websocket_request('new_transaction', transaction_data, ip_address, port)
             print(response)
+
+
+
+
 
         elif choice == 'New Message':
             questions = [
@@ -73,10 +78,8 @@ async def client():
             if answers is None:
                 print("\nReturning to main menu...")
                 continue
-            # Send message request
-            # with open(answers['receiver'], 'r') as file:
-            #     receiver = file.read().strip()
-            #     receiver = receiver.replace('\\n', '\n'
+         
+
 
             receiver = answers['receiver']
             # Send transaction request
@@ -85,6 +88,9 @@ async def client():
             print(response)
             # response = await send_websocket_request('new_message', answers, ip_address, port)
         
+
+
+
         elif choice == 'Add Stake':
             questions = [
                 inquirer.Text(name='amount', message='How many BlockChat Coins to stake?'),
@@ -97,16 +103,24 @@ async def client():
             response = await send_websocket_request('stake', {'amount': answers['amount']}, ip_address, port)
             print(response)
             
+
+
+
         elif choice == 'View last block':
             # Assuming you have a specific message format for this request
             response = await send_websocket_request('view_last_transactions', {}, ip_address, port)
             print(json.dumps(response, indent=4))
 
+
+
+
         elif choice == 'View Last Messages':
-          
             response = await send_websocket_request('view_last_messages', {}, ip_address, port)
             print(json.dumps(response, indent=4))
             
+
+
+
         elif choice == 'Show balance':
             # Assuming you have a specific message format for this request
             print(ip_address, port)
@@ -116,18 +130,26 @@ async def client():
             print("Confirmed balance:", response['confirmed_balance'])
             print("Confirmed amount reserved for staking:", response['confirmed_stake'])
 
+
+
         elif choice == 'Help':
             # Display help text
             print('Help text goes here...')
             
+
+
         elif choice == 'Exit':
             print("Exiting...")
             break
+
+
         if choice != 'Exit':
             input("Press enter to continue...")
             clear_console()
         else:
             running = False
+
+
 
 if __name__ == "__main__":
     asyncio.run(client())

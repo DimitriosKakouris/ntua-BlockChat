@@ -1,7 +1,7 @@
 import asyncio
 import os
 import time
-from test_websockets_serve import total_nodes
+from wserve import total_nodes
 from wsmanager import send_websocket_request
 from block import block_capacity
 
@@ -53,7 +53,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
 
         await asyncio.sleep(10)
         blockchain_timestamps = await send_websocket_request('get_block_timestamps', {}, IP_ADDRESS, PORT)
-        print(f'Blockchain timestamps: {blockchain_timestamps}')
+        print(f'Blockchain blocks: {blockchain_timestamps}')
         
         block_times = [blockchain_timestamps[i+1] - blockchain_timestamps[i] for i in range(len(blockchain_timestamps) - 1)]
         throughput = num_transactions/total_time
