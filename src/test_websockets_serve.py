@@ -8,7 +8,7 @@ from block import Block
 from transaction import Transaction
 from wsmanager import send_websocket_request
 import execute_tests
-
+import subprocess
 
 lock = asyncio.Lock()
 
@@ -16,7 +16,10 @@ node = Node()
 
 # Load environment variables and set up node details
 load_dotenv()
-IP_ADDRESS = "10.0.0.5"
+command = "hostname --ip-address"
+result = subprocess.run(["hostname", "--ip-address"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+IP_ADDRESS = result.stdout.strip()
+# IP_ADDRESS = "10.0.0.5"
 PORT = 80
 total_nodes = int(os.getenv('TOTAL_NODES', 3))
 total_bcc = total_nodes * 1000
