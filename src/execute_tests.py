@@ -8,7 +8,7 @@ from block import block_capacity
 total_time = 0
 num_transactions = 0
 staking_amount = 10
-nodes_executing_transactions = 10
+nodes_executing_transactions = 3
 
 async def execute_transactions(node_id, IP_ADDRESS, PORT):
     """This function sends the transactions of the text file"""
