@@ -19,7 +19,7 @@ class Blockchain:
     
     def from_dict(self, data):
         for block_data in data['blocks']:
-            block = Block.from_dict(block_data)  # Assuming Block has a similar from_dict method
+            block = Block.from_dict(block_data) 
             self.blocks.append(block)
         return self
 
@@ -34,6 +34,7 @@ class Blockchain:
             print(f"Popping block {next_block.index}")
             if await node.validate_block(next_block):
                 print(f"Adding block from buffer {next_block.index}")
+                
                 self.blocks.append(next_block)
                 buff_blocks_added.append(next_block.to_dict())
             else:

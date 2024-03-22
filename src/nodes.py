@@ -226,7 +226,7 @@ class Node:
             self.account_space[transaction['sender_address']]['balance'] -= self.account_space[transaction['sender_address']]['stake']
             
     async def update_final_soft_state(self, block_info):
-        print("BLock info:", block_info)
+        print("Block info:", block_info)
         transactions = block_info['transactions']
         validator = block_info['validator']
        
@@ -255,11 +255,18 @@ class Node:
         self.wallet.balance = self.account_space[self.wallet.public_key]['valid_balance']
         self.stake_amount = self.account_space[self.wallet.public_key]['valid_stake']
 
+
+        blockchain_transactions = {trans.transaction_id for block in self.chain.blocks for trans in block.transactions}
+
+        # Convert block_info['transactions'] to a set of dictionaries and add it to blockchain_transactions
+        block_info_transactions = {trans['transaction_id'] for trans in block_info['transactions']}
+        blockchain_transactions.update(block_info_transactions)
+
         buffer_deque = deque()
         while self.pending_transactions:
             trans = self.pending_transactions.popleft()
-            trans_dict = trans.to_dict()
-            if trans_dict not in transactions:
+            trans_id = trans.transaction_id
+            if trans_id not in blockchain_transactions:
                 buffer_deque.append(trans)
         while buffer_deque:
             self.pending_transactions.appendleft(buffer_deque.pop())
@@ -472,10 +479,6 @@ class Node:
                 self.block_buffer[block.index] = block
                 print(f"##############BLOCK with {block.index} BUFFERED##############")
                 
-                # Remove transactions in the buffered block from pending_transactions
-                for transaction in block.transactions:
-                    if transaction in self.pending_transactions:
-                        self.pending_transactions.remove(transaction)
 
 
             else:

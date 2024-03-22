@@ -336,10 +336,6 @@ async def handler(websocket):
                     node.block_buffer[block.index] = block
                     print(f"##############BLOCK with {block.index} BUFFERED##############")
 
-                    # Remove transactions in the buffered block from pending_transactions
-                    for transaction in block.transactions:
-                        if transaction in node.pending_transactions:
-                            node.pending_transactions.remove(transaction)
 
                 else:
                     if await node.validate_block(block):
