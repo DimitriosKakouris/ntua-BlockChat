@@ -63,7 +63,7 @@ async def client():
             # Send transaction request
             transaction_data = {'receiver': receiver, 'amount': answers['amount']}
             response = await send_websocket_request('new_transaction', transaction_data, ip_address, port)
-            print(response)
+            # print(response)
 
 
 
@@ -85,7 +85,7 @@ async def client():
             # Send transaction request
             transaction_data = {'receiver': receiver, 'message': answers['message']}
             response = await send_websocket_request('new_message', transaction_data, ip_address, port)
-            print(response)
+            # print(response)
             # response = await send_websocket_request('new_message', answers, ip_address, port)
         
 
@@ -101,7 +101,7 @@ async def client():
                 continue
             # Send stake request
             response = await send_websocket_request('stake', {'amount': answers['amount']}, ip_address, port)
-            print(response)
+            # print(response)
             
 
 

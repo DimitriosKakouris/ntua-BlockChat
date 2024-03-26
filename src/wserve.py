@@ -29,8 +29,8 @@ bootstrap_node = {
 }
 
 # Debug prints
-print('IP address: ', IP_ADDRESS)
-print('PORT: ', PORT)
+# print('IP address: ', IP_ADDRESS)
+# print('PORT: ', PORT)
 
 node.ip = IP_ADDRESS
 node.port = str(PORT)
@@ -313,7 +313,7 @@ async def handler(websocket):
 
             
             if res['status'] == 200 and res['message'] == 'Block is full and going to mint':
-                    await node.mint_block()
+                    # await node.mint_block()
                     await websocket.send(json.dumps(res))
             else:
                 await websocket.send(json.dumps(res))
@@ -346,14 +346,22 @@ async def handler(websocket):
                         for buff_block in buff_blocks_added:    
                             await node.update_final_soft_state(buff_block)
 
+                       
+
                     
                         node.current_block = Block(node.chain.blocks[-1].index + 1, node.chain.blocks[-1].current_hash)
+                        
+                        node.new_block_event.set()
+
                     
-                        for _ in range(block_capacity):
-                            if not node.pending_transactions:
-                                break
-                            trans = node.pending_transactions.popleft()
-                            await node.add_transaction_to_block(trans)
+                        # for _ in range(block_capacity-1):
+                        #     if not node.pending_transactions:
+                        #         break
+                        #     trans = node.pending_transactions.popleft()
+                        #     res = node.current_block.add_transaction(trans)
+                         
+                            # print(f"@@@@@@@@@RES from pushing pending transactions: {res} @@@@@@@@@ with current block validator {node.current_block.validator}")
+                          
 
                         await websocket.send(json.dumps({'status':200,'message':'Block added to chain', 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
 
@@ -376,7 +384,8 @@ async def handler(websocket):
         
         elif data['action'] == 'get_block_timestamps':
             timestamps = [block.current_hash[:20] for block in node.chain.blocks]
-            await websocket.send(json.dumps({'blocks':timestamps}))
+            pending = len(node.pending_transactions)
+            await websocket.send(json.dumps({'blocks':timestamps, 'pending':pending}))
 
 
 
@@ -384,6 +393,8 @@ async def handler(websocket):
 # Start the WebSocket server
 
 async def main():
+
+    asyncio.create_task(node.process_pending_transactions())
     async with websockets.serve(handler, IP_ADDRESS, PORT,ping_interval=None):
         print(f"Server started at ws://{IP_ADDRESS}:{PORT}")
         

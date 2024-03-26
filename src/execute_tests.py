@@ -18,7 +18,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
         
         # asyncio.sleep(0.2)
         response = await send_websocket_request('stake', {'amount': staking_amount}, IP_ADDRESS, PORT)
-        print(response['message'])
+        # print(response['message'])
 
         global total_time
         global num_transactions
@@ -47,15 +47,16 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
                     #     blockchain_timestamps.append(block_timestamp)
                     total_time += transaction_time
                     num_transactions += 1
-                    print(response['message'])
+                    # print(response['message'])
                 except:
                     exit("Node is not active. Try again later.\n")
 
         await asyncio.sleep(10)
         blockchain_timestamps = await send_websocket_request('get_block_timestamps', {}, IP_ADDRESS, PORT)
-        print(f'Blockchain blocks: {blockchain_timestamps}')
+        print(f"Blockchain blocks: {blockchain_timestamps['blocks']}")
+        print(f"Nodes Pending: {blockchain_timestamps['pending']}")
         
-        block_times = [blockchain_timestamps[i+1] - blockchain_timestamps[i] for i in range(len(blockchain_timestamps) - 1)]
+        # block_times = [blockchain_timestamps[i+1]['blocks'] - blockchain_timestamps[i]['blocks'] for i in range(len(blockchain_timestamps) - 1)]
         throughput = num_transactions/total_time
         # block_time = sum(block_times)/len(block_times)
 
