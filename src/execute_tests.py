@@ -4,11 +4,12 @@ import time
 from wserve import total_nodes
 from wsmanager import send_websocket_request
 from block import block_capacity
+from dotenv import load_dotenv
 
 total_time = 0
 num_transactions = 0
 staking_amount = 10
-nodes_executing_transactions = 10
+nodes_executing_transactions = total_nodes
 
 async def execute_transactions(node_id, IP_ADDRESS, PORT):
     """This function sends the transactions of the text file"""
@@ -22,7 +23,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
 
         global total_time
         global num_transactions
-        transaction_file = f'./testing/input/trans{node_id}.txt'
+        transaction_file = f'./testing/{nodes_executing_transactions}nodes/trans{node_id}.txt'
         # blockchain_timestamps = []
 
         # await asyncio.sleep(2)
