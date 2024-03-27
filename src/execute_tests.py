@@ -2,10 +2,12 @@ import asyncio
 import os
 import sys
 import time
+import pytz
 from wserve import total_nodes, compute_justice
 from wsmanager import send_websocket_request
 from block import block_capacity
 from dotenv import load_dotenv
+from datetime import datetime
 load_dotenv()
 
 total_time = 0
@@ -70,9 +72,11 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
         print('Block time: %f' %block_time)
         print('Capacity: %d' %block_capacity)
         print('-----------------------------------')
-
+        timezone = pytz.timezone('Europe/Athens')
+        date = datetime.now(timezone).strftime('%Y-%m-%d %H:%M')
         os.makedirs('./testing/results', exist_ok=True)
         with open(f'./testing/results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
+            f.write(date)
             f.write('Final results for node %d\n' %node_id)
             f.write('Throughput: %f\n' %throughput)
             f.write('Block time: %f\n' %block_time)
@@ -80,6 +84,6 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
             f.write('-----------------------------------')
             f.write('\n')
     
-    await asyncio.sleep(5)
-    sys.exit(0)
+    # await asyncio.sleep(5)
+    # sys.exit(0)
         
