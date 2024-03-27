@@ -16,9 +16,12 @@ node = Node()
 
 # Load environment variables and set up node details
 load_dotenv()
-command = "hostname --ip-address"
-result = subprocess.run(["hostname", "--ip-address"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-IP_ADDRESS = result.stdout.strip()
+command = "hostname -I"
+result = subprocess.run(["hostname", "-I"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+ips = result.stdout.strip().split()
+if len(ips) > 1:
+    IP_ADDRESS = ips[2]
+# IP_ADDRESS = result.stdout.strip()
 PORT = 80
 total_nodes = int(os.getenv('TOTAL_NODES', 3))
 total_bcc = total_nodes * 1000
