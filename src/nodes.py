@@ -7,7 +7,6 @@ import asyncio
 import os
 from dotenv import load_dotenv
 from collections import deque
-from wserve import total_nodes
 
 load_dotenv()
 total_nodes = int(os.getenv('TOTAL_NODES', 5))
