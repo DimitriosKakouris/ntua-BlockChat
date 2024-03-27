@@ -9,6 +9,7 @@ from transaction import Transaction
 from wsmanager import send_websocket_request
 import execute_tests
 import subprocess
+import sys
 
 lock = asyncio.Lock()
 
@@ -16,21 +17,34 @@ node = Node()
 
 # Load environment variables and set up node details
 load_dotenv()
-command = "hostname -I"
+
 result = subprocess.run(["hostname", "-I"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 ips = result.stdout.strip().split()
-if len(ips) > 1:
-    IP_ADDRESS = ips[2]
-# IP_ADDRESS = result.stdout.strip()
+matched_ip = [i for i in ips if "10.110.0" in i]
+IP_ADDRESS = matched_ip[0]
 PORT = 80
-total_nodes = int(os.getenv('TOTAL_NODES', 3))
+
+if len(sys.argv) > 3:
+    total_nodes = int(sys.argv[1])
+    block_capacity = int(sys.argv[2])
+    compute_justice = bool(sys.argv[3])
+elif len(sys.argv) > 2:
+    total_nodes = int(sys.argv[1])
+    block_capacity = int(sys.argv[2])
+    compute_justice = False
+else:
+    print("Not enough arguments provided.")
+    sys.exit(1)  # Exit with error code
+    # total_nodes = int(os.getenv('TOTAL_NODES', 3))
+    # block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
+    # compute_justice = False
+
 total_bcc = total_nodes * 1000
-block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
 test_mode = bool(os.getenv('TEST_MODE', False))
 
 bootstrap_node = {
-    'ip': os.getenv('BOOTSTRAP_IP', '172.18.0.2'),
-    'port': os.getenv('BOOTSTRAP_PORT', '8000')
+    'ip': os.getenv('BOOTSTRAP_IP', '10.110.0.2'),
+    'port': os.getenv('BOOTSTRAP_PORT', '80')
 }
 
 # Debug prints

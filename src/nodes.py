@@ -7,10 +7,11 @@ import asyncio
 import os
 from dotenv import load_dotenv
 from collections import deque
+from wserve import total_nodes
 
-load_dotenv()
-total_nodes = int(os.getenv('TOTAL_NODES', 5))
-block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
+# load_dotenv()
+# total_nodes = int(os.getenv('TOTAL_NODES', 5))
+# block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
 
 class Node:
     def __init__(self):

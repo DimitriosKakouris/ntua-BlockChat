@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start WebSocket server in the background
-python ./src/wserve.py  &
+python ./src/wserve.py "$@"  &
 
 # Execute CLI script in the foreground
 python ./src/client.py  

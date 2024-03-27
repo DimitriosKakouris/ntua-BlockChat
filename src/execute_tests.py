@@ -1,52 +1,59 @@
 import asyncio
 import os
+import sys
 import time
-from wserve import total_nodes
+from wserve import total_nodes, compute_justice
 from wsmanager import send_websocket_request
 from block import block_capacity
 from dotenv import load_dotenv
+load_dotenv()
 
 total_time = 0
 num_transactions = 0
 staking_amount = 10
-nodes_executing_transactions = total_nodes
+if compute_justice:
+    higher_stake = 100
+    chosen_ip = os.getenv('BOOTSTRAP_IP', '10.110.0.2')
+    chosen_port = os.getenv('BOOTSTRAP_PORT', '80')
 
 async def execute_transactions(node_id, IP_ADDRESS, PORT):
     """This function sends the transactions of the text file"""
-    if node_id < nodes_executing_transactions:
-        print(f"Executing transactions for node {node_id} with IP {IP_ADDRESS} and port {PORT}...")
-        # exit()
-        
-        # asyncio.sleep(0.2)
+    print(f"Executing transactions for node {node_id} with IP {IP_ADDRESS} and port {PORT}...")
+    # exit()
+    
+    # asyncio.sleep(0.2)
+    if IP_ADDRESS == chosen_ip and PORT == chosen_port and compute_justice:
+        response = await send_websocket_request('stake', {'amount': higher_stake}, IP_ADDRESS, PORT)
+    else:
         response = await send_websocket_request('stake', {'amount': staking_amount}, IP_ADDRESS, PORT)
-        # print(response['message'])
+    # print(response['message'])
 
-        global total_time
-        global num_transactions
-        transaction_file = f'./testing/{nodes_executing_transactions}nodes/trans{node_id}.txt'
-        # blockchain_timestamps = []
+    global total_time
+    global num_transactions
+    transaction_file = f'./testing/{total_nodes}nodes/trans{node_id}.txt'
+    # blockchain_timestamps = []
 
-        # await asyncio.sleep(2)
-        
-        with open(transaction_file, 'r') as f:
-            for i, line in enumerate(f):
-                # Get the info of the transaction.
-                print(f"Sending transaction no. {i}")
-                # await asyncio.sleep(0.3)
-                line = line.split(' ', 1)
-                receiver_id = int(line[0][2])
-                message = line[1].strip()
-                transaction_data = {'receiver': receiver_id, 'message': message}
-                # Send the current transaction.
-                try:
-                    start_time = time.time()
-                    response = await send_websocket_request('new_message', transaction_data, IP_ADDRESS, PORT)
-                    transaction_time = time.time() - start_time
-                    total_time += transaction_time
-                    num_transactions += 1
-                    # print(response['message'])
-                except:
-                    exit("Node is not active. Try again later.\n")
+    # await asyncio.sleep(2)
+    
+    with open(transaction_file, 'r') as f:
+        for i, line in enumerate(f):
+            # Get the info of the transaction.
+            print(f"Sending transaction no. {i}")
+            # await asyncio.sleep(0.3)
+            line = line.split(' ', 1)
+            receiver_id = int(line[0][2])
+            message = line[1].strip()
+            transaction_data = {'receiver': receiver_id, 'message': message}
+            # Send the current transaction.
+            try:
+                start_time = time.time()
+                response = await send_websocket_request('new_message', transaction_data, IP_ADDRESS, PORT)
+                transaction_time = time.time() - start_time
+                total_time += transaction_time
+                num_transactions += 1
+                # print(response['message'])
+            except:
+                exit("Node is not active. Try again later.\n")
 
         await asyncio.sleep(10)
         blockchain_timestamps = await send_websocket_request('get_block_timestamps', {}, IP_ADDRESS, PORT)
@@ -72,4 +79,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
             f.write('Capacity: %d\n' %block_capacity)
             f.write('-----------------------------------')
             f.write('\n')
+    
+    await asyncio.sleep(5)
+    sys.exit(0)
         
