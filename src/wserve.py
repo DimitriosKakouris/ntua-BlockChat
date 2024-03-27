@@ -24,20 +24,10 @@ matched_ip = [i for i in ips if "10.110.0" in i]
 IP_ADDRESS = matched_ip[0]
 PORT = 80
 
-if len(sys.argv) > 3:
-    total_nodes = int(sys.argv[1])
-    block_capacity = int(sys.argv[2])
-    compute_justice = bool(sys.argv[3])
-elif len(sys.argv) > 2:
-    total_nodes = int(sys.argv[1])
-    block_capacity = int(sys.argv[2])
-    compute_justice = False
-else:
-    print("Not enough arguments provided.")
-    sys.exit(1)  # Exit with error code
-    # total_nodes = int(os.getenv('TOTAL_NODES', 3))
-    # block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
-    # compute_justice = False
+
+total_nodes = int(os.getenv('TOTAL_NODES', 3))
+block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
+compute_justice = bool(os.getenv("COMPUTE_JUSTICE", False))
 
 total_bcc = total_nodes * 1000
 test_mode = bool(os.getenv('TEST_MODE', False))

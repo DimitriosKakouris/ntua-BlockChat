@@ -4,13 +4,11 @@ import json
 from Crypto.Hash import SHA256
 from transaction import Transaction
 import os
-# from dotenv import load_dotenv
-# from wserve import block_capacity
-# load_dotenv()
-# block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
+from dotenv import load_dotenv
+load_dotenv()
 
-import wserve
-block_capacity = wserve.block_capacity
+block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
+
 
 class Block:
     def __init__(self, index, previous_hash):
