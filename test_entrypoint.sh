@@ -1,4 +1,5 @@
 #!/bin/bash
+export TEST_MODE="True"
 
 if [ $# -eq 2 ]; then
   export TOTAL_NODES="$1"
@@ -18,5 +19,6 @@ else
   echo "COMPUTE_JUSTICE is optional and must be 'True' or 'False'."
   exit 1
 fi
+
 # Start WebSocket server in the background
 python ./src/wserve.py 
