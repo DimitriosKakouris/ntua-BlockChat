@@ -14,8 +14,6 @@ matched_ip = [i for i in ips if "10.110.0" in i]
 ip_address = matched_ip[0]
 port = 80
 
-# ip_address = os.getenv('IP')
-# port = os.getenv('PORT')
 address = f'ws://{ip_address}:{port}'
 
 
@@ -53,16 +51,9 @@ async def client():
         choice = choice['menu']
         clear_console()
 
-        #res = await send_websocket_request_unique('check_allow_transactions', {}, ip_address, port)
-        #if not res['variable']:
-        # print(f"Allow transactions variable {os.getenv('ALLOW_TRANSACTIONS')}")
-        # if os.environ.get('ALLOW_TRANSACTIONS') == 'False':
-        #     print("\nTransactions can be executed when all nodes are connected.")
-        #     continue
         data = await send_websocket_request('get_ring_length', {}, ip_address, port)
-        # print("Ring length: ", data['ring_len'])
-        if data['ring_len'] < int(os.getenv('TOTAL_NODES', 3)):
-            print("\nTransactions can be executed when all nodes are connected.")
+        if data['ring_len'] < int(os.getenv('TOTAL_NODES')):
+            print("\nPlease wait for all nodes to join the network before choosing an action.")
             continue
         elif choice == 'New Transaction':
             questions = [
@@ -149,9 +140,16 @@ async def client():
 
         elif choice == 'Help':
             # Display help text
-            print('Help text goes here...')
-            
-
+            print('Choose among the following actions:')
+            print('New Transaction: Send BlockChat Coins to another user.')
+            print('New Message: Send a message to another user.')
+            print('Add Stake: Stake some of your BlockChat Coins.')
+            print('View last block: View the transactions of the last validated block of the blockchain.')
+            print('View Last Messages: View all the messages you have received by other users.')
+            print('Show balance: Display your current soft and hard state of balance and staking amount.')
+            print('Help: Display this help text.')
+            print('Exit: Close the client.')
+            print('You can return to the main menu at any time by pressing Ctrl+C.')
 
         elif choice == 'Exit':
             print("Exiting...")

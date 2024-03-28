@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
+block_capacity = int(os.getenv('BLOCK_CAPACITY'))
 
 
 class Block:

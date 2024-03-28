@@ -24,14 +24,11 @@ matched_ip = [i for i in ips if "10.110.0" in i]
 IP_ADDRESS = matched_ip[0]
 PORT = 80
 
-# command = "export ALLOW_TRANSACTIONS=False"
-# os.environ['ALLOW_TRANSACTIONS'] = 'False'
-# print(f"Allow transactions variable {os.getenv('ALLOW_TRANSACTIONS')}")
 
-total_nodes = int(os.getenv('TOTAL_NODES', 3))
-block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
+total_nodes = int(os.getenv('TOTAL_NODES'))
+block_capacity = int(os.getenv('BLOCK_CAPACITY'))
 compute_justice_str = os.getenv("COMPUTE_JUSTICE", "False")
-compute_justice = compute_justice_str == "True" #bool(os.getenv("COMPUTE_JUSTICE", False))
+compute_justice = compute_justice_str == "True"
 
 total_bcc = total_nodes * 1000
 test_mode_str = os.getenv('TEST_MODE', "False")
@@ -60,7 +57,6 @@ if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
 
 bootstrap_ready_event = asyncio.Event()
 test_ready_event = asyncio.Event()
-allow_transactions = False
 
 async def register_node():
    
@@ -142,8 +138,6 @@ async def handler(websocket):
 
         elif data['action'] == 'ready_for_tests':
             test_ready_event.set()
-            # os.environ['ALLOW_TRANSACTIONS'] = 'True'
-            allow_transactions = True
             await websocket.send(json.dumps({'message': "Tests event set"}))
          
         
@@ -412,8 +406,6 @@ async def handler(websocket):
             # timestamps = [block.current_hash[:20] for block in node.chain.blocks]
             await websocket.send(json.dumps({'blocks':timestamps, 'validators':validators}))
 
-        elif data['action'] == 'check_allow_transactions':
-            await websocket.send(json.dumps({'variable': allow_transactions}))
 
 
 

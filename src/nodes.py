@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 from collections import deque
 
 load_dotenv()
-total_nodes = int(os.getenv('TOTAL_NODES', 5))
-block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
+total_nodes = int(os.getenv('TOTAL_NODES'))
+block_capacity = int(os.getenv('BLOCK_CAPACITY'))
 
 class Node:
     def __init__(self):
