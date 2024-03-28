@@ -52,7 +52,7 @@ async def client():
         clear_console()
 
         data = await send_websocket_request('get_ring_length', {}, ip_address, port)
-        if data['ring_len'] < int(os.getenv('TOTAL_NODES')):
+        if data['ring_len'] < int(os.getenv('TOTAL_NODES')) and choice != 'Exit':
             print("\nPlease wait for all nodes to join the network before choosing an action.")
             continue
         elif choice == 'New Transaction':
