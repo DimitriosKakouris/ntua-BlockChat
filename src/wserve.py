@@ -398,26 +398,6 @@ async def handler(websocket):
             # timestamps = [block.current_hash[:20] for block in node.chain.blocks]
             await websocket.send(json.dumps({'blocks':timestamps}))
 
-        # elif data['action'] == 'shutdown':
-        #     await websocket.send(json.dumps({'message': "Shutting down..."}))
-        #     # websocket.close()
-        #     # sys.exit(0)
-        #     try:
-        #         # Improved grep pattern to avoid matching the grep process itself
-        #         command = ["pgrep", "-f", "python ./src/wserve.py"]
-        #         result = subprocess.run(command, check=True, stdout=subprocess.PIPE, text=True)
-        #         pid = result.stdout.strip()
-        #         if pid:
-        #             # Attempting graceful shutdown first
-        #             subprocess.run(["kill", pid])
-        #             # Consider adding a delay and check if the process is still running, then use SIGKILL
-        #     except subprocess.CalledProcessError as e:
-        #         # Handle errors such as no process found
-        #         print(f"Error: {e}")
-        #     except IndexError:
-        #         print("Process ID not found. Is the process running?")
-
-
 
 
 # Start the WebSocket server

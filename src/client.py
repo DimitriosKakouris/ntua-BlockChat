@@ -147,7 +147,7 @@ async def client():
         input("Press enter to continue...")
         clear_console()
     else:
-        # await send_websocket_request('shutdown', {}, ip_address, port)
+       
         running = False
 
 

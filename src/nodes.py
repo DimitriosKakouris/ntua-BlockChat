@@ -21,12 +21,12 @@ class Node:
         self.ip = None
         self.port = None
         self.current_block = None
-        self.transaction_pool = []
         self.stake_amount = 0
         self.account_space = {}
         self.pending_transactions = deque()
         self.block_buffer = {}
         self.new_block_event = asyncio.Event()
+        self.block_lock = asyncio.Lock()
         
     
 
@@ -39,7 +39,6 @@ class Node:
         node.id = data['id']
         node.ip = data['ip']
         node.port = data['port']
-        node.transaction_pool = data['transaction_pool']
         node.stake_amount = data['stake_amount']
         node.current_block = Block.from_dict(data['current_block'])
         return node
@@ -431,43 +430,43 @@ class Node:
     async def add_transaction_to_block(self, transaction):
         """Adds a transaction to a block, check if minting is needed and update
         the wallet and balances of participating nodes"""
+        async with self.block_lock:
+            transaction_added = self.current_block.add_transaction(transaction)
 
-        transaction_added = self.current_block.add_transaction(transaction)
-
-        if transaction_added == 2:
-            self.pending_transactions.append(transaction)
-            # await self.mint_block()
-
-            if self.current_block.validator is None:
+            if transaction_added == 2:
+                self.pending_transactions.append(transaction)
                 # await self.mint_block()
-                return {'status': 200, 'message': 'Block is full and going to mint'}
-            else:
-                return {'status': 200, 'message': 'Block is full and already minted'}
 
-        elif transaction_added == 1:
-            if not await self.validate_transaction(transaction):
-                self.current_block.transactions.pop()
-                return {'status': 400, 'message': 'Transaction Invalid'}
+                if self.current_block.validator is None:
+                    # await self.mint_block()
+                    return {'status': 200, 'message': 'Block is full and going to mint'}
+                else:
+                    return {'status': 200, 'message': 'Block is full and already minted'}
+
+            elif transaction_added == 1:
+                if not await self.validate_transaction(transaction):
+                    self.current_block.transactions.pop()
+                    return {'status': 400, 'message': 'Transaction Invalid'}
+                
+                
+                if self.current_block.validator is None:
+                    await self.mint_block()
+                    return {'status': 200, 'message': 'Block is full and going to mint'}
+                    
+                else:
+                    return {'status': 200, 'message': 'Block is full and already minted'}
+
+
             
-           
-            if self.current_block.validator is None:
-                await self.mint_block()
-                return {'status': 200, 'message': 'Block is full and going to mint'}
-               
-            else:
-                return {'status': 200, 'message': 'Block is full and already minted'}
-
-
-        
-        elif transaction_added == 0:
-            if not await self.validate_transaction(transaction):
-                self.current_block.transactions.pop()
-                return {'status': 400, 'message': 'Transaction Invalid'}
-            
-            await self.update_soft_state(transaction.to_dict())
-         
-            print(f"Transaction added to block and curr length is {len(self.current_block.transactions)}")
-            return {'status': 200, 'message': 'Transaction added to block'}
+            elif transaction_added == 0:
+                if not await self.validate_transaction(transaction):
+                    self.current_block.transactions.pop()
+                    return {'status': 400, 'message': 'Transaction Invalid'}
+                
+                await self.update_soft_state(transaction.to_dict())
+                
+                print(f"Transaction added to block and curr length is {len(self.current_block.transactions)}")
+                return {'status': 200, 'message': 'Transaction added to block'}
   
       
 

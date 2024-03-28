@@ -24,9 +24,15 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
     # exit()
     
     # asyncio.sleep(0.2)
-    if IP_ADDRESS == chosen_ip and PORT == chosen_port and compute_justice:
-        response = await send_websocket_request('stake', {'amount': higher_stake}, IP_ADDRESS, PORT)
+    if compute_justice:
+        if IP_ADDRESS == chosen_ip and PORT == chosen_port:
+            print(f"Node {node_id} is the chosen one. Staking {higher_stake} coins...")
+            response = await send_websocket_request('stake', {'amount': higher_stake}, IP_ADDRESS, PORT)
+        else:
+            print(f"Staking {staking_amount} coins...")
+            response = await send_websocket_request('stake', {'amount': staking_amount}, IP_ADDRESS, PORT)
     else:
+        print(f"Staking {staking_amount} coins...")
         response = await send_websocket_request('stake', {'amount': staking_amount}, IP_ADDRESS, PORT)
     # print(response['message'])
 
@@ -78,11 +84,13 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
         with open(f'./testing/results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
             f.write(date)
             f.write('\nFinal results for node %d\n' %node_id)
+            f.write(f'Blockchain timestamps: {blockchain_timestamps}\n')
             f.write('Throughput: %f\n' %throughput)
             f.write('Block time: %f\n' %block_time)
             f.write('Capacity: %d\n' %block_capacity)
             f.write('-----------------------------------')
             f.write('\n')
+        
     
     # await asyncio.sleep(5)
     # sys.exit(0)
