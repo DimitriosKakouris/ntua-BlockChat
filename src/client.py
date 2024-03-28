@@ -144,39 +144,26 @@ async def client():
             elif choice == 'Help':
                 # Display help text
                 print('Choose among the following actions:')
-                print('\t\u2022New Transaction: Send BlockChat Coins to another user.')
-                print('\t\u2022New Message: Send a message to another user.')
-                print('\t\u2022Add Stake: Stake some of your BlockChat Coins.')
-                print('\t\u2022View last block: View the transactions of the last validated block of the blockchain.')
-                print('\t\u2022View Last Messages: View all the messages you have received by other users.')
-                print('\t\u2022Show balance: Display your current soft and hard state of balance and staking amount.')
-                print('\t\u2022Help: Display this help text.')
-                print('\t\u2022Exit: Close the client.')
+                print('  \u2022New Transaction: Send BlockChat Coins to another user.')
+                print('  \u2022New Message: Send a message to another user.')
+                print('  \u2022Add Stake: Stake some of your BlockChat Coins.')
+                print('  \u2022View last block: View the transactions of the last validated block of the blockchain.')
+                print('  \u2022View Last Messages: View all the messages you have received by other users.')
+                print('  \u2022Show balance: Display your current soft and hard state of balance and staking amount.')
+                print('  \u2022Help: Display this help text.')
+                print('  \u2022Exit: Close the client.')
                 print('You can return to the main menu at any time by pressing Ctrl+C.')
             
             input("Press enter to continue...")
             clear_console()
 
-        #elif choice == 'Exit':
         else:
             print("Exiting...")
             running = False
             break
-            # return
 
-        # if choice != 'Exit':
-        #     input("Press enter to continue...")
-        #     clear_console()
-        # else:
-        #     running = False
-        #     break
 
 
 
 if __name__ == "__main__":
     asyncio.run(client())
-    # loop = asyncio.get_event_loop()
-    # try:
-    #     loop.run_until_complete(client())
-    # finally:
-    #     loop.close()
