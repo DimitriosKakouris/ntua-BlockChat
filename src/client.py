@@ -153,14 +153,15 @@ async def client():
 
         elif choice == 'Exit':
             print("Exiting...")
+            running = False
             break
-
 
         if choice != 'Exit':
             input("Press enter to continue...")
             clear_console()
-        else:
-            running = False
+        # else:
+        #     running = False
+        #     break
 
 
 
