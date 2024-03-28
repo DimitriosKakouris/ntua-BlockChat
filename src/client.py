@@ -36,6 +36,7 @@ def prompt_with_interrupt(questions):
 async def client():
     clear_console()
     running = True
+    print("Welcome to the BlockChat Client!")
     while running:
       
         menu = [ 
