@@ -143,12 +143,12 @@ async def client():
             break
 
 
-        if choice != 'Exit':
-            input("Press enter to continue...")
-            await send_websocket_request('shutdown', {}, ip_address, port)
-            clear_console()
-        else:
-            running = False
+    if choice != 'Exit':
+        input("Press enter to continue...")
+        clear_console()
+    else:
+        await send_websocket_request('shutdown', {}, ip_address, port)
+        running = False
 
 
 
