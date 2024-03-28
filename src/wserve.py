@@ -24,7 +24,8 @@ matched_ip = [i for i in ips if "10.110.0" in i]
 IP_ADDRESS = matched_ip[0]
 PORT = 80
 
-
+os.environ['ALLOW_TRANSACTIONS'] = 'False'
+print(f"Allow transactions variable {os.getenv('ALLOW_TRANSACTIONS')}")
 total_nodes = int(os.getenv('TOTAL_NODES', 3))
 block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
 compute_justice_str = os.getenv("COMPUTE_JUSTICE", "False")
@@ -58,7 +59,6 @@ if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
 bootstrap_ready_event = asyncio.Event()
 test_ready_event = asyncio.Event()
 allow_transactions = False
-os.environ['ALLOW_TRANSACTIONS'] = 'False'
 
 async def register_node():
    

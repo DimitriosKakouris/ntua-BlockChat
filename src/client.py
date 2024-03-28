@@ -48,7 +48,7 @@ async def client():
         #res = await send_websocket_request_unique('check_allow_transactions', {}, ip_address, port)
         #if not res['variable']:
         print(f"Allow transactions variable {os.getenv('ALLOW_TRANSACTIONS')}")
-        if os.getenv('ALLOW_TRANSACTIONS') == 'False':
+        if os.environ.get('ALLOW_TRANSACTIONS') == 'False':
             print("\nTransactions can be executed when all nodes are connected.")
             continue
 
