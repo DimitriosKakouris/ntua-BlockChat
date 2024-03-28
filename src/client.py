@@ -3,11 +3,19 @@ import os
 import asyncio
 from wsmanager import send_websocket_request
 import json
+import subprocess
 
 from dotenv import load_dotenv
 load_dotenv()
-ip_address = os.getenv('IP')
-port = os.getenv('PORT')
+
+result = subprocess.run(["hostname", "-I"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+ips = result.stdout.strip().split()
+matched_ip = [i for i in ips if "10.110.0" in i]
+ip_address = matched_ip[0]
+port = 80
+
+# ip_address = os.getenv('IP')
+# port = os.getenv('PORT')
 address = f'ws://{ip_address}:{port}'
 
 
