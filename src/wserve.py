@@ -58,6 +58,7 @@ if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
 bootstrap_ready_event = asyncio.Event()
 test_ready_event = asyncio.Event()
 allow_transactions = False
+os.environ['ALLOW_TRANSACTIONS'] = 'False'
 
 async def register_node():
    
@@ -139,6 +140,7 @@ async def handler(websocket):
 
         elif data['action'] == 'ready_for_tests':
             test_ready_event.set()
+            os.environ['ALLOW_TRANSACTIONS'] = 'True'
             allow_transactions = True
             await websocket.send(json.dumps({'message': "Tests event set"}))
          
