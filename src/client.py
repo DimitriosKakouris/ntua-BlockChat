@@ -155,7 +155,7 @@ async def client():
         elif choice == 'Exit':
             print("Exiting...")
             running = False
-            break
+            return
 
         if choice != 'Exit':
             input("Press enter to continue...")
