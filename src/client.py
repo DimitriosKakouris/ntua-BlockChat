@@ -167,4 +167,9 @@ async def client():
 
 
 if __name__ == "__main__":
-    asyncio.run(client())
+    # asyncio.run(client())
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(client())
+    finally:
+        loop.close()
