@@ -398,6 +398,11 @@ async def handler(websocket):
             # timestamps = [block.current_hash[:20] for block in node.chain.blocks]
             await websocket.send(json.dumps({'blocks':timestamps}))
 
+        elif data['action'] == 'shutdown':
+            await websocket.send(json.dumps({'message': "Shutting down..."}))
+            await websocket.close()
+            sys.exit(0)
+
 
 
 
