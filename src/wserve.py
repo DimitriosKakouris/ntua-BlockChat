@@ -398,6 +398,7 @@ async def handler(websocket):
             validator_ids = {}
             for ring_node in node.ring:
                 validator_ids[ring_node['public_key']] = str(ring_node['id'])
+            print(validator_ids)
             validators = [validator_ids[str(block.validator)] for block in node.chain.blocks]
             # timestamps = [block.current_hash[:20] for block in node.chain.blocks]
             await websocket.send(json.dumps({'blocks':timestamps, 'validators':validators}))
