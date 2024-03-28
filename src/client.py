@@ -141,14 +141,14 @@ async def client():
         elif choice == 'Help':
             # Display help text
             print('Choose among the following actions:')
-            print('New Transaction: Send BlockChat Coins to another user.')
-            print('New Message: Send a message to another user.')
-            print('Add Stake: Stake some of your BlockChat Coins.')
-            print('View last block: View the transactions of the last validated block of the blockchain.')
-            print('View Last Messages: View all the messages you have received by other users.')
-            print('Show balance: Display your current soft and hard state of balance and staking amount.')
-            print('Help: Display this help text.')
-            print('Exit: Close the client.')
+            print('\t\u2022New Transaction: Send BlockChat Coins to another user.')
+            print('\t\u2022New Message: Send a message to another user.')
+            print('\t\u2022Add Stake: Stake some of your BlockChat Coins.')
+            print('\t\u2022View last block: View the transactions of the last validated block of the blockchain.')
+            print('\t\u2022View Last Messages: View all the messages you have received by other users.')
+            print('\t\u2022Show balance: Display your current soft and hard state of balance and staking amount.')
+            print('\t\u2022Help: Display this help text.')
+            print('\t\u2022Exit: Close the client.')
             print('You can return to the main menu at any time by pressing Ctrl+C.')
 
         elif choice == 'Exit':
@@ -156,12 +156,11 @@ async def client():
             break
 
 
-    if choice != 'Exit':
-        input("Press enter to continue...")
-        clear_console()
-    else:
-       
-        running = False
+        if choice != 'Exit':
+            input("Press enter to continue...")
+            clear_console()
+        else:
+            running = False
 
 
 
