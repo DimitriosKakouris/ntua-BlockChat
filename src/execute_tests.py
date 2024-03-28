@@ -64,9 +64,11 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
                 exit("Node is not active. Try again later.\n")
 
         await asyncio.sleep(10)
-        blockchain_timestamps = await send_websocket_request('get_block_timestamps', {}, IP_ADDRESS, PORT)
-        blockchain_timestamps = blockchain_timestamps['blocks']
-        print(f'Blockchain timestamps: {blockchain_timestamps}')
+        timestamps_validators= await send_websocket_request('get_block_timestamps', {}, IP_ADDRESS, PORT)
+        blockchain_timestamps = timestamps_validators['blocks']
+        blockchain_validators = timestamps_validators['validators']
+        tuple_list = list(zip(blockchain_timestamps, blockchain_validators))
+        print(f'Blockchain timestamps and validators: {tuple_list}')
         
         block_times = [float(blockchain_timestamps[i+1]) - float(blockchain_timestamps[i]) for i in range(len(blockchain_timestamps) - 1)]
         throughput = num_transactions/total_time
@@ -84,7 +86,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
         with open(f'./testing/results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
             f.write(date)
             f.write('\nFinal results for node %d\n' %node_id)
-            f.write(f'Blockchain timestamps: {blockchain_timestamps}\n')
+            f.write(f'Blockchain timestamps and validators: {tuple_list}\n')
             f.write('Throughput: %f\n' %throughput)
             f.write('Block time: %f\n' %block_time)
             f.write('Capacity: %d\n' %block_capacity)

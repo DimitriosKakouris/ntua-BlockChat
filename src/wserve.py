@@ -395,8 +395,12 @@ async def handler(websocket):
         
         elif data['action'] == 'get_block_timestamps':
             timestamps = [block.timestamp for block in node.chain.blocks]
+            validator_ids = {}
+            for ring_node in node.ring:
+                validator_ids[ring_node['public_key']] = ring_node['id']
+            validators = [validator_ids[block.validator] for block in node.chain.blocks]
             # timestamps = [block.current_hash[:20] for block in node.chain.blocks]
-            await websocket.send(json.dumps({'blocks':timestamps}))
+            await websocket.send(json.dumps({'blocks':timestamps, 'validators':validators}))
 
 
 
