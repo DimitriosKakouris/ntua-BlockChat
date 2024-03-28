@@ -3,6 +3,7 @@ import os
 import asyncio
 from wsmanager import send_websocket_request
 import json
+from wserve import allow_transactions
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -38,10 +39,6 @@ async def client():
             choices= ['New Transaction', 'New Message','Add Stake', 'View last block','View Last Messages', 'Show balance', 'Help', 'Exit'], 
             ),
         ]
-        res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
-        if not res['data']['message']:
-            print("\nTransactions can be executed when all nodes are connected.")
-            continue
         choice = prompt_with_interrupt(menu)
         if choice is None:
             print("\nReturning to main menu...")
@@ -49,11 +46,13 @@ async def client():
         choice = choice['menu']
         clear_console()
 
+        #res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
+        #if not res['data']['message']:
+        if not allow_transactions:
+            print("\nTransactions can be executed when all nodes are connected.")
+            continue
 
-
-
-
-        if choice == 'New Transaction':
+        elif choice == 'New Transaction':
             res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
             if not res['data']['message']:
                 print("\nTransactions can be executed when all nodes are connected.")
