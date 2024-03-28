@@ -400,9 +400,20 @@ async def handler(websocket):
 
         elif data['action'] == 'shutdown':
             await websocket.send(json.dumps({'message': "Shutting down..."}))
-            await websocket.close()
-            exit()
-        
+            try:
+                # Improved grep pattern to avoid matching the grep process itself
+                command = ["pgrep", "-f", "python ./src/wserve.py"]
+                result = subprocess.run(command, check=True, stdout=subprocess.PIPE, text=True)
+                pid = result.stdout.strip()
+                if pid:
+                    # Attempting graceful shutdown first
+                    subprocess.run(["kill", pid])
+                    # Consider adding a delay and check if the process is still running, then use SIGKILL
+            except subprocess.CalledProcessError as e:
+                # Handle errors such as no process found
+                print(f"Error: {e}")
+            except IndexError:
+                print("Process ID not found. Is the process running?")
 
 
 
