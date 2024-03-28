@@ -27,10 +27,12 @@ PORT = 80
 
 total_nodes = int(os.getenv('TOTAL_NODES', 3))
 block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
-compute_justice = bool(os.getenv("COMPUTE_JUSTICE", False))
+compute_justice_str = os.getenv("COMPUTE_JUSTICE", "False")
+compute_justice = compute_justice_str == "True" #bool(os.getenv("COMPUTE_JUSTICE", False))
 
 total_bcc = total_nodes * 1000
-test_mode = bool(os.getenv('TEST_MODE', False))
+test_mode_str = os.getenv('TEST_MODE', "False")
+test_mode = test_mode_str == 'True'
 
 bootstrap_node = {
     'ip': os.getenv('BOOTSTRAP_IP', '10.110.0.2'),
