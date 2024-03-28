@@ -24,8 +24,10 @@ matched_ip = [i for i in ips if "10.110.0" in i]
 IP_ADDRESS = matched_ip[0]
 PORT = 80
 
-os.environ['ALLOW_TRANSACTIONS'] = 'False'
-print(f"Allow transactions variable {os.getenv('ALLOW_TRANSACTIONS')}")
+# command = "export ALLOW_TRANSACTIONS=False"
+# os.environ['ALLOW_TRANSACTIONS'] = 'False'
+# print(f"Allow transactions variable {os.getenv('ALLOW_TRANSACTIONS')}")
+
 total_nodes = int(os.getenv('TOTAL_NODES', 3))
 block_capacity = int(os.getenv('BLOCK_CAPACITY', 5))
 compute_justice_str = os.getenv("COMPUTE_JUSTICE", "False")
@@ -140,7 +142,7 @@ async def handler(websocket):
 
         elif data['action'] == 'ready_for_tests':
             test_ready_event.set()
-            os.environ['ALLOW_TRANSACTIONS'] = 'True'
+            # os.environ['ALLOW_TRANSACTIONS'] = 'True'
             allow_transactions = True
             await websocket.send(json.dumps({'message': "Tests event set"}))
          

@@ -1,7 +1,7 @@
 import inquirer
 import os
 import asyncio
-from wsmanager import send_websocket_request, send_websocket_request_unique
+from wsmanager import send_websocket_request
 import json
 
 from dotenv import load_dotenv
@@ -47,11 +47,15 @@ async def client():
 
         #res = await send_websocket_request_unique('check_allow_transactions', {}, ip_address, port)
         #if not res['variable']:
-        print(f"Allow transactions variable {os.getenv('ALLOW_TRANSACTIONS')}")
-        if os.environ.get('ALLOW_TRANSACTIONS') == 'False':
+        # print(f"Allow transactions variable {os.getenv('ALLOW_TRANSACTIONS')}")
+        # if os.environ.get('ALLOW_TRANSACTIONS') == 'False':
+        #     print("\nTransactions can be executed when all nodes are connected.")
+        #     continue
+        data = await send_websocket_request('get_ring_length', {}, ip_address, port)
+        # print("Ring length: ", data['ring_len'])
+        if data['ring_len'] < int(os.getenv('TOTAL_NODES', 3)):
             print("\nTransactions can be executed when all nodes are connected.")
             continue
-
         elif choice == 'New Transaction':
             questions = [
                 inquirer.Text(name='receiver', message='What is the Receiver ID?'),
