@@ -1,7 +1,7 @@
 import inquirer
 import os
 import asyncio
-from wsmanager import send_websocket_request
+from wsmanager import send_websocket_request, send_websocket_request_unique
 import json
 
 from dotenv import load_dotenv
@@ -45,7 +45,7 @@ async def client():
         choice = choice['menu']
         clear_console()
 
-        res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
+        res = await send_websocket_request_unique('check_allow_transactions', {}, ip_address, port)
         if not res['variable']:
             print("\nTransactions can be executed when all nodes are connected.")
             continue
