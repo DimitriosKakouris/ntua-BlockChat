@@ -38,6 +38,10 @@ async def client():
             choices= ['New Transaction', 'New Message','Add Stake', 'View last block','View Last Messages', 'Show balance', 'Help', 'Exit'], 
             ),
         ]
+        res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
+        if not res['data']['message']:
+            print("\nTransactions can be executed when all nodes are connected.")
+            continue
         choice = prompt_with_interrupt(menu)
         if choice is None:
             print("\nReturning to main menu...")
