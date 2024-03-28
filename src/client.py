@@ -38,11 +38,11 @@ async def client():
             choices= ['New Transaction', 'New Message','Add Stake', 'View last block','View Last Messages', 'Show balance', 'Help', 'Exit'], 
             ),
         ]
-        # choice = prompt_with_interrupt(menu)
-        # if choice is None:
-        #     print("\nReturning to main menu...")
-        #     continue
-        choice = inquirer.prompt(menu)
+        choice = prompt_with_interrupt(menu)
+        if choice is None:
+            print("\nReturning to main menu...")
+            continue
+        # choice = inquirer.prompt(menu)
         choice = choice['menu']
         clear_console()
 
@@ -149,6 +149,7 @@ async def client():
             clear_console()
         else:
             running = False
+            return
 
 
 
