@@ -42,7 +42,6 @@ async def client():
         if choice is None:
             print("\nReturning to main menu...")
             continue
-        # choice = inquirer.prompt(menu)
         choice = choice['menu']
         clear_console()
 
@@ -149,7 +148,6 @@ async def client():
             clear_console()
         else:
             running = False
-            return
 
 
 
