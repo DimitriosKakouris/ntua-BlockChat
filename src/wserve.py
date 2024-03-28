@@ -57,6 +57,8 @@ if IP_ADDRESS == bootstrap_node["ip"] and str(PORT) == bootstrap_node["port"]:
 
 bootstrap_ready_event = asyncio.Event()
 test_ready_event = asyncio.Event()
+allow_transactions = False
+
 async def register_node():
    
         if node.id == 0:
@@ -95,7 +97,7 @@ async def register_node():
 
             data = await send_websocket_request('get_ring_length', {}, node.ip, node.port)
             print("Ring length: ", data['ring_len'])
-            if data['ring_len'] == total_nodes: #TODO: may need better condition
+            if data['ring_len'] == total_nodes:
                 await send_websocket_request('last_node_ready', {}, bootstrap_node['ip'], bootstrap_node['port'])
               
 
@@ -137,6 +139,7 @@ async def handler(websocket):
 
         elif data['action'] == 'ready_for_tests':
             test_ready_event.set()
+            allow_transactions = True
             await websocket.send(json.dumps({'message': "Tests event set"}))
          
         
@@ -404,6 +407,9 @@ async def handler(websocket):
             validators = [validator_ids[str(block.validator)] if block.index > 1 else '0' for block in node.chain.blocks]
             # timestamps = [block.current_hash[:20] for block in node.chain.blocks]
             await websocket.send(json.dumps({'blocks':timestamps, 'validators':validators}))
+
+        elif data['action'] == 'start_transactions':
+            await websocket.send(json.dumps({'message': allow_transactions}))
 
 
 

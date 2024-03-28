@@ -50,6 +50,9 @@ async def client():
 
 
         if choice == 'New Transaction':
+            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+                print("\nTransactions can be executed when all nodes are connected.")
+                continue
             questions = [
                 inquirer.Text(name='receiver', message='What is the Receiver ID?'),
                 inquirer.Text(name='amount', message='How many BlockChat Coins to send?'),
@@ -70,6 +73,10 @@ async def client():
 
 
         elif choice == 'New Message':
+            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+                print("\nTransactions can be executed when all nodes are connected.")
+                continue
+            
             questions = [
                 inquirer.Text(name='receiver', message='What is the Receiver ID?'),
                 inquirer.Text(name='message', message='What is the message?'),
@@ -92,6 +99,10 @@ async def client():
 
 
         elif choice == 'Add Stake':
+            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+                print("\nTransactions can be executed when all nodes are connected.")
+                continue
+
             questions = [
                 inquirer.Text(name='amount', message='How many BlockChat Coins to stake?'),
             ]
@@ -107,6 +118,10 @@ async def client():
 
 
         elif choice == 'View last block':
+            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+                print("\nTransactions can be executed when all nodes are connected.")
+                continue
+
             # Assuming you have a specific message format for this request
             response = await send_websocket_request('view_last_transactions', {}, ip_address, port)
             print(json.dumps(response, indent=4))
@@ -115,6 +130,10 @@ async def client():
 
 
         elif choice == 'View Last Messages':
+            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+                print("\nTransactions can be executed when all nodes are connected.")
+                continue
+
             response = await send_websocket_request('view_last_messages', {}, ip_address, port)
             print(json.dumps(response, indent=4))
             
@@ -122,6 +141,10 @@ async def client():
 
 
         elif choice == 'Show balance':
+            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+                print("\nTransactions can be executed when all nodes are connected.")
+                continue
+            
             # Assuming you have a specific message format for this request
             print(ip_address, port)
             response = await send_websocket_request('get_balance', {}, ip_address, port)
