@@ -401,7 +401,8 @@ async def handler(websocket):
         elif data['action'] == 'shutdown':
             await websocket.send(json.dumps({'message': "Shutting down..."}))
             await websocket.close()
-            sys.exit(0)
+            exit()
+        
 
 
 
