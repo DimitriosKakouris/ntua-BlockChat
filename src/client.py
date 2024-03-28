@@ -50,7 +50,8 @@ async def client():
 
 
         if choice == 'New Transaction':
-            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+            res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
+            if not res['data']['message']:
                 print("\nTransactions can be executed when all nodes are connected.")
                 continue
             questions = [
@@ -73,7 +74,8 @@ async def client():
 
 
         elif choice == 'New Message':
-            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+            res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
+            if not res['data']['message']:
                 print("\nTransactions can be executed when all nodes are connected.")
                 continue
             
@@ -99,7 +101,8 @@ async def client():
 
 
         elif choice == 'Add Stake':
-            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+            res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
+            if not res['data']['message']:
                 print("\nTransactions can be executed when all nodes are connected.")
                 continue
 
@@ -118,7 +121,8 @@ async def client():
 
 
         elif choice == 'View last block':
-            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+            res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
+            if not res['data']['message']:
                 print("\nTransactions can be executed when all nodes are connected.")
                 continue
 
@@ -130,7 +134,8 @@ async def client():
 
 
         elif choice == 'View Last Messages':
-            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+            res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
+            if not res['data']['message']:
                 print("\nTransactions can be executed when all nodes are connected.")
                 continue
 
@@ -141,7 +146,8 @@ async def client():
 
 
         elif choice == 'Show balance':
-            if not await send_websocket_request('start_transactions', {}, ip_address, port)['message']:
+            res = await send_websocket_request('check_allow_transactions', {}, ip_address, port)
+            if not res['data']['message']:
                 print("\nTransactions can be executed when all nodes are connected.")
                 continue
             
