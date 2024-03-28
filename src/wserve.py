@@ -409,7 +409,7 @@ async def handler(websocket):
             await websocket.send(json.dumps({'blocks':timestamps, 'validators':validators}))
 
         elif data['action'] == 'check_allow_transactions':
-            await websocket.send(json.dumps({'message': allow_transactions}))
+            await websocket.send(json.dumps({'variable': allow_transactions}))
 
 
 
