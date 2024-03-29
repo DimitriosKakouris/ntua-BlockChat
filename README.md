@@ -6,35 +6,24 @@
 
 #### BlockChat
 
-# To-Do List
-- [ ] Run the code and debug
-- [X] Websockets/endpoints
-- [X] app.py/main.py file
-- [X] client/blockchat.py file
 
-Implement the following functions:
-- [x] generate_wallet()
-- [x] create_transaction()
-- [x] broadcast_transaction()
-- [x] broadcast_block()
-- [x] validate_chain()
-- [x] stake(amount)
+#### Run in VMs:
+
+1. Change your BOOTSTRAP_IP and BOOTSTRAP_PORT in the [.env file](https://github.com/tomkosm/ntua-blockchain/blob/main/src/.env), and the prefix of the private IPs of the nodes in the network in this [line](https://github.com/tomkosm/ntua-blockchain/blob/main/src/wserve.py#L23).
+
+2. For each node, open a terminal, and change to the home directory.
+
+3. To run the client, from each terminal run:
+
+```  bash entrypoint.sh TOTAL_NODES BLOCK_CAPACITY ```
+
+Substitute TOTAL_NODES with the number of the clients in which you want to run the application, and BLOCK_CAPACITY with the capacity of the blocks.
+
+2. To run the tests (files available for either 5 or 10 clients), run:
+
+``` bash entrypoint.sh TOTAL_NODES BLOCK_CAPACITY [COMPUTE_JUSTICE] ```
+
+The 'COMPUTE_JUSTICE' parameter defines whether there will be a node that will receive 100 BCCs instead of 10. Defining this parameter is optional and it defaults to 'False'.
 
 
-#### Build and Run Your Docker Containers:
-
-1. From home directory (where docker-compose.yml and Dockerfile reside) run:
-
-```  docker build -t ntua-blockchain . ```
-
-2. Create the containers, this will create a network for them with subnet 172.18.0.0/16:
-
-``` docker compose up ```
-
-3. To enter a node (client) and enter the network, for example first node:
-
-``` docker-compose exec node1 bash entrypoint.sh ```
-
-4. To close the service and down the containers:
-
-``` docker compose down ```
+##### To run the code in Docker containers, use the docker branch.
