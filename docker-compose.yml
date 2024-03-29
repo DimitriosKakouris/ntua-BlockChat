@@ -1,5 +1,5 @@
 services:
-  node1:
+  node0:
     image: ntua-blockchain
     environment:
       - PORT=8000
@@ -12,7 +12,7 @@ services:
       blockchat:
         ipv4_address: 172.18.0.2
 
-  node2:
+  node1:
     image: ntua-blockchain
     environment:
       - PORT=8001
@@ -25,7 +25,7 @@ services:
       blockchat:
         ipv4_address: 172.18.0.3
 
-  node3:
+  node2:
     image: ntua-blockchain
     environment:
       - PORT=8002
@@ -38,7 +38,7 @@ services:
       blockchat:
         ipv4_address: 172.18.0.4
 
-  node4:
+  node3:
     image: ntua-blockchain
     environment:
       - PORT=8003
@@ -51,7 +51,7 @@ services:
       blockchat:
         ipv4_address: 172.18.0.5
 
-  node5:
+  node4:
     image: ntua-blockchain
     environment:
       - PORT=8004
@@ -64,7 +64,7 @@ services:
       blockchat:
         ipv4_address: 172.18.0.6
 
-  node6:
+  node5:
     image: ntua-blockchain
     environment:
       - PORT=8005
@@ -77,7 +77,7 @@ services:
       blockchat:
         ipv4_address: 172.18.0.7
 
-  node7:
+  node6:
     image: ntua-blockchain
     environment:
       - PORT=8006
@@ -90,7 +90,7 @@ services:
       blockchat:
         ipv4_address: 172.18.0.8
 
-  node8:
+  node7:
     image: ntua-blockchain
     environment:
       - PORT=8007
@@ -103,7 +103,7 @@ services:
       blockchat:
         ipv4_address: 172.18.0.9
 
-  node9:
+  node8:
     image: ntua-blockchain
     environment:
       - PORT=8008
@@ -116,7 +116,7 @@ services:
       blockchat:
         ipv4_address: 172.18.0.10
 
-  node10:
+  node9:
     image: ntua-blockchain
     environment:
       - PORT=8009
