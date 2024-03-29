@@ -11,16 +11,11 @@ else
 fi
 
 # Start WebSocket server in the background
-python ./src/wserve.py  &
+python /app/wserve.py  &
 WSERVE_PID=$!
 
 # Execute CLI script in the foreground
-python ./src/client.py  
+python /app/client.py 
 
 # After the client script finishes, kill the WebSocket server
 kill $WSERVE_PID
-
-# cd /app/frontend/blockchat_client npm build .
-
-
-# cd /app/frontend/blockchat_client npm start

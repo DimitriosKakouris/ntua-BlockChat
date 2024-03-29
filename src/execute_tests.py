@@ -15,8 +15,8 @@ num_transactions = 0
 staking_amount = 10
 if compute_justice:
     higher_stake = 100
-    chosen_ip = os.getenv('BOOTSTRAP_IP', '10.110.0.2')
-    chosen_port = os.getenv('BOOTSTRAP_PORT', '80')
+    chosen_ip = os.getenv('BOOTSTRAP_IP', '172.18.0.2')
+    chosen_port = os.getenv('BOOTSTRAP_PORT', '8000')
 
 async def execute_transactions(node_id, IP_ADDRESS, PORT):
     """This function sends the transactions of the text file"""
@@ -38,7 +38,7 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
 
     global total_time
     global num_transactions
-    transaction_file = f'./testing/{total_nodes}nodes/trans{node_id}.txt'
+    transaction_file = f'./{total_nodes}nodes/trans{node_id}.txt'
     # blockchain_timestamps = []
 
     # await asyncio.sleep(2)
@@ -82,8 +82,8 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
         print('-----------------------------------')
         timezone = pytz.timezone('Europe/Athens')
         date = datetime.now(timezone).strftime('%Y-%m-%d %H:%M')
-        os.makedirs('./testing/results', exist_ok=True)
-        with open(f'./testing/results/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
+        os.makedirs('/app/results', exist_ok=True)
+        with open(f'/app/{total_nodes}_clients_node_{node_id}.txt', 'a') as f:
             f.write(date)
             f.write('\nFinal results for node %d\n' %node_id)
             f.write(f'Blockchain timestamps and validators: {tuple_list}\n')

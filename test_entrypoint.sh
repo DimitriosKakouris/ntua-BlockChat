@@ -21,4 +21,4 @@ else
 fi
 
 # Start WebSocket server in the background
-python ./src/wserve.py 
+python /app/wserve.py

@@ -8,8 +8,6 @@ from block import Block
 from transaction import Transaction
 from wsmanager import send_websocket_request
 import execute_tests
-import subprocess
-import sys
 
 lock = asyncio.Lock()
 
@@ -18,11 +16,8 @@ node = Node()
 # Load environment variables and set up node details
 load_dotenv()
 
-result = subprocess.run(["hostname", "-I"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-ips = result.stdout.strip().split()
-matched_ip = [i for i in ips if "10.110.0" in i]
-IP_ADDRESS = matched_ip[0]
-PORT = 80
+IP_ADDRESS = os.getenv("IP", "172.18.0.2")
+PORT = os.getenv("PORT", "8000")
 
 
 total_nodes = int(os.getenv('TOTAL_NODES'))
@@ -35,8 +30,8 @@ test_mode_str = os.getenv('TEST_MODE', "False")
 test_mode = test_mode_str == 'True'
 
 bootstrap_node = {
-    'ip': os.getenv('BOOTSTRAP_IP', '10.110.0.2'),
-    'port': os.getenv('BOOTSTRAP_PORT', '80')
+    'ip': os.getenv('BOOTSTRAP_IP', '172.18.0.2'),
+    'port': os.getenv('BOOTSTRAP_PORT', '8000')
 }
 
 # Debug prints
