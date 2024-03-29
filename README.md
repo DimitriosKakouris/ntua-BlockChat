@@ -9,7 +9,7 @@
 
 #### Run in VMs:
 
-1. Change your BOOTSTRAP_IP and BOOTSTRAP_PORT in the [.env file](https://github.com/tomkosm/ntua-blockchain/blob/main/src/.env), and the prefix of the private IPs of the nodes in the network in this [line](https://github.com/tomkosm/ntua-blockchain/blob/main/src/wserve.py#L23).
+1. Change your BOOTSTRAP_IP and BOOTSTRAP_PORT in the [./src/.env file](https://github.com/tomkosm/ntua-blockchain/blob/main/src/.env), and the prefix of the private IPs of the nodes in the network in this [line](https://github.com/tomkosm/ntua-blockchain/blob/main/src/wserve.py#L23) of the ./src/wserve.py file.
 
 2. For each node, open a terminal, and change to the home directory.
 
