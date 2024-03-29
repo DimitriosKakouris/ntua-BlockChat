@@ -15,13 +15,17 @@
 
 3. To run the client, from each terminal run:
 
-```  bash entrypoint.sh TOTAL_NODES BLOCK_CAPACITY ```
+```
+bash entrypoint.sh TOTAL_NODES BLOCK_CAPACITY
+```
 
 Substitute TOTAL_NODES with the number of the clients in which you want to run the application, and BLOCK_CAPACITY with the capacity of the blocks.
 
 2. To run the tests (files available for either 5 or 10 clients), run:
 
-``` bash entrypoint.sh TOTAL_NODES BLOCK_CAPACITY [COMPUTE_JUSTICE] ```
+```
+bash entrypoint.sh TOTAL_NODES BLOCK_CAPACITY [COMPUTE_JUSTICE]
+```
 
 The 'COMPUTE_JUSTICE' parameter defines whether there will be a node that will receive 100 BCCs instead of 10. Defining this parameter is optional and it defaults to 'False'.
 
