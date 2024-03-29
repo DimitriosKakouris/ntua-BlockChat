@@ -39,9 +39,6 @@ bootstrap_node = {
     'port': os.getenv('BOOTSTRAP_PORT', '80')
 }
 
-# Debug prints
-# print('IP address: ', IP_ADDRESS)
-# print('PORT: ', PORT)
 
 node.ip = IP_ADDRESS
 node.port = str(PORT)
@@ -325,7 +322,6 @@ async def handler(websocket):
 
             
             if res['status'] == 200 and res['message'] == 'Block is full and going to mint':
-                    # await node.mint_block()
                     await websocket.send(json.dumps(res))
             else:
                 await websocket.send(json.dumps(res))
@@ -365,15 +361,6 @@ async def handler(websocket):
                         
                         node.new_block_event.set()
 
-                    
-                        # for _ in range(block_capacity-1):
-                        #     if not node.pending_transactions:
-                        #         break
-                        #     trans = node.pending_transactions.popleft()
-                        #     res = node.current_block.add_transaction(trans)
-                         
-                            # print(f"@@@@@@@@@RES from pushing pending transactions: {res} @@@@@@@@@ with current block validator {node.current_block.validator}")
-                          
 
                         await websocket.send(json.dumps({'status':200,'message':'Block added to chain', 'pk':node.wallet.public_key ,'new_balance':node.wallet.balance , 'new_stake':node.stake_amount}))
 
@@ -399,11 +386,7 @@ async def handler(websocket):
             validator_ids = {}
             for ring_node in node.ring:
                 validator_ids[ring_node['public_key']] = ring_node['id']
-            # print(validator_ids)
-            # for block in node.chain.blocks:
-            #     print(f"Validator: {block.validator}")
             validators = [validator_ids[str(block.validator)] if block.index > 1 else '0' for block in node.chain.blocks]
-            # timestamps = [block.current_hash[:20] for block in node.chain.blocks]
             await websocket.send(json.dumps({'blocks':timestamps, 'validators':validators}))
 
 

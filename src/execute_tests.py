@@ -21,9 +21,7 @@ if compute_justice:
 async def execute_transactions(node_id, IP_ADDRESS, PORT):
     """This function sends the transactions of the text file"""
     print(f"Executing transactions for node {node_id} with IP {IP_ADDRESS} and port {PORT}...")
-    # exit()
-    
-    # asyncio.sleep(0.2)
+
     if compute_justice:
         if IP_ADDRESS == chosen_ip and PORT == chosen_port:
             print(f"Node {node_id} is the chosen one. Staking {higher_stake} coins...")
@@ -34,14 +32,10 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
     else:
         print(f"Staking {staking_amount} coins...")
         response = await send_websocket_request('stake', {'amount': staking_amount}, IP_ADDRESS, PORT)
-    # print(response['message'])
 
     global total_time
     global num_transactions
     transaction_file = f'./testing/{total_nodes}nodes/trans{node_id}.txt'
-    # blockchain_timestamps = []
-
-    # await asyncio.sleep(2)
     
     with open(transaction_file, 'r') as f:
         for i, line in enumerate(f):
@@ -59,7 +53,6 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
                 transaction_time = time.time() - start_time
                 total_time += transaction_time
                 num_transactions += 1
-                # print(response['message'])
             except:
                 exit("Node is not active. Try again later.\n")
 
@@ -93,7 +86,4 @@ async def execute_transactions(node_id, IP_ADDRESS, PORT):
             f.write('-----------------------------------')
             f.write('\n')
         
-    
-    # await asyncio.sleep(5)
-    # sys.exit(0)
         

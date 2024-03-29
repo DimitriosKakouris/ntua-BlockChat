@@ -5,7 +5,7 @@ import asyncio
 
 class Blockchain:
     def __init__(self):
-        self.blocks = [] #block.genesis()
+        self.blocks = []
         self.blockchain_lock = asyncio.Lock()
     
         

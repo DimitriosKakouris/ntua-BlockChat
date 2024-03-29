@@ -40,7 +40,7 @@ class Block:
             "index": self.index,
             "previous_hash": self.previous_hash,
             "timestamp": self.timestamp,
-            "transactions": self.transactions #TODO: it may want ids instead of transactions
+            "transactions": self.transactions
         }
         block_json = json.dumps(block_json, sort_keys=True)
         return SHA256.new(block_json.encode()).hexdigest()
@@ -58,7 +58,7 @@ class Block:
         return {
             'index': self.index,
             'timestamp': self.timestamp,
-            'transactions': [transaction.to_dict() for transaction in self.transactions],  # Assuming Transaction has a to_dict method
+            'transactions': [transaction.to_dict() for transaction in self.transactions],
             'previous_hash': self.previous_hash,
             'hash': self.current_hash,
             'validator': self.validator

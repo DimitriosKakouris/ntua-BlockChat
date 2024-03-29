@@ -63,7 +63,6 @@ async def send_websocket_request_update(action, data, ip, port):
         'action': action,
         'data': data
      }
-    # print(f"Sending request to {ws_url} with {websocket}: {request}")
 
     async with lock:
       try:
