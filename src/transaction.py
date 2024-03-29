@@ -29,12 +29,12 @@ class Transaction:
         Sign the transaction with the sender's private key.
         """
 
-         # Convert the private key from a string to a key object
+        # Convert the private key from a string to a key object
         private_key = RSA.import_key(private_key_string)
 
         signer = pkcs1_15.new(private_key)
         h = SHA256.new(self.transaction_id.encode())
-        self.signature = base64.b64encode(signer.sign(h)).decode() #TODO: may not need base64 encoding
+        self.signature = base64.b64encode(signer.sign(h)).decode()
 
 
 
@@ -51,6 +51,7 @@ class Transaction:
         except (ValueError, TypeError):
             return False
         
+    # FOR ETHEREUM WALLET TYPE
     # def sign_transaction(self, private_key_string):
     #     """
     #     Sign the transaction with the sender's private key.
@@ -127,8 +128,5 @@ class Transaction:
         transaction.transaction_id = transaction_dict['transaction_id']
         transaction.signature = transaction_dict['signature']
         return transaction
-        
 
-
-
-
+  

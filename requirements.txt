@@ -2,5 +2,5 @@
 pycryptodome
 websockets
 inquirer
-texttable
+pytz
 python-dotenv

@@ -68,8 +68,6 @@ async def client():
                 # Send transaction request
                 transaction_data = {'receiver': receiver, 'amount': answers['amount']}
                 response = await send_websocket_request('new_transaction', transaction_data, ip_address, port)
-                # print(response)
-
 
 
 
@@ -90,8 +88,6 @@ async def client():
                 # Send transaction request
                 transaction_data = {'receiver': receiver, 'message': answers['message']}
                 response = await send_websocket_request('new_message', transaction_data, ip_address, port)
-                # print(response)
-                # response = await send_websocket_request('new_message', answers, ip_address, port)
             
 
 
@@ -106,13 +102,11 @@ async def client():
                     continue
                 # Send stake request
                 response = await send_websocket_request('stake', {'amount': answers['amount']}, ip_address, port)
-                # print(response)
                 
 
 
 
             elif choice == 'View last block':
-                # Assuming you have a specific message format for this request
                 response = await send_websocket_request('view_last_transactions', {}, ip_address, port)
                 print(json.dumps(response, indent=4))
 
@@ -127,7 +121,6 @@ async def client():
 
 
             elif choice == 'Show balance':
-                # Assuming you have a specific message format for this request
                 print(ip_address, port)
                 response = await send_websocket_request('get_balance', {}, ip_address, port)
                 print("Balance:", response['balance'])

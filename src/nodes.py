@@ -44,17 +44,6 @@ class Node:
         return node
     
 
-    # async def process_pending_transactions(self):
-    #     while True:
-    #         # print(f"Pending transactions: {len(self.pending_transactions)}")
-    #         if self.pending_transactions and self.current_block.validator is None: 
-
-    #             trans = self.pending_transactions.popleft()
-    #             res = await self.add_transaction_to_block(trans)
-    #             print(f"@@@@@@@@@ PROCESSING PENDING TRANSACTIONS: {res} @@@@@@@@@")
-          
-    #         else:
-    #             await asyncio.sleep(0.1)
     
     async def process_pending_transactions(self):
         while True:
@@ -97,7 +86,6 @@ class Node:
         flag = 1 if transaction.type_of_transaction == 'coin' and (int(self.account_space[transaction.sender_address]['id'])!= 0 or transaction.nonce >= len(self.ring) ) else 0
         stake_flag = 1 if transaction.receiver_address == '0' else 0
         if int(transaction.amount) * (1 + flag * 0.03)  > int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag:
-            # print(f"Insufficient balance {int(sender_balance) + int(self.account_space[transaction.sender_address]['stake']) * stake_flag} and amount {int(transaction.amount) * (1 + flag * 0.03)}")
             return False
     
      
@@ -191,51 +179,7 @@ class Node:
 
 
 
-
-    # async def update_balance(self, transactions): #, transactions
-    #     #async with self.block_lock:
-    #     buffer_deque = deque()
-    #     transactions_copy = transactions.copy()
-        
-
-    #     for trans in transactions_copy:
-          
-    #         flag = 1 if trans.type_of_transaction == 'coin' and (self.account_space[trans.sender_address]['id']!= '0' or trans.nonce >= total_nodes-1) else 0
-
-    #         if self.chain.blocks[-1].validator == self.wallet.public_key:
-    #             if trans.type_of_transaction == 'coin' and trans.receiver_address != '0':
-    #                 self.wallet.balance += flag * 0.03 * int(trans.to_dict()['amount'])
-    #                 # self.account_space[self.wallet.public_key]['balance'] += flag * 0.03 * int(trans.to_dict()['amount'])
-    #             elif trans.type_of_transaction == 'message':
-    #                 self.wallet.balance += int(trans.to_dict()['amount'])
-    #                 # self.account_space[self.wallet.public_key]['balance'] += int(trans.to_dict()['amount'])
-
-    #         if trans.sender_address == self.wallet.public_key and trans.receiver_address != '0':
-    #             self.wallet.balance -= int(trans.to_dict()['amount']) * (1 + flag * 0.03)
-
-    #         elif trans.sender_address == self.wallet.public_key and trans.receiver_address == '0':
-    #             print("I am in 'update_balance' for stake")
-    #             self.wallet.balance += self.stake_amount
-    #             self.stake_amount = int(trans.to_dict()['amount'])
-    #             self.wallet.balance -= self.stake_amount
-
-    #         if trans.receiver_address == self.wallet.public_key and trans.type_of_transaction == 'coin':
-    #             self.wallet.balance += int(trans.to_dict()['amount'])
-    #         # else:
-    #         #     buffer_deque.append(trans)
-        
-    #     while self.pending_transactions:
-    #         trans = self.pending_transactions.popleft()
-    #         if trans not in transactions_copy:
-    #             buffer_deque.append(trans)
-    #     while buffer_deque:
-    #         self.pending_transactions.appendleft(buffer_deque.pop())
-
-        
-
-
     async def update_soft_state(self,transaction):
-        #async with self.block_lock: #and transaction['recipient_address'] != '0' 
         print("I am in 'update_soft_state'")
         flag = 1 if transaction['type_of_transaction'] == 'coin' and (self.account_space[transaction['sender_address']]['id'] != 0 or transaction['nonce'] >= len(self.ring) ) else 0
         message_flag = 0 if transaction['type_of_transaction'] == 'message' else 1
@@ -254,12 +198,10 @@ class Node:
 
 
     async def update_final_soft_state(self, block_info):
-        # print("Block info:", block_info)
         transactions = block_info['transactions']
         validator = block_info['validator']
        
         for transaction in transactions:
-            # print(transaction)
             flag = 1 if transaction['type_of_transaction'] == 'coin' and (self.account_space[transaction['sender_address']]['id'] != 0 or transaction['nonce'] >= total_nodes ) else 0
             message_flag = 0 if transaction['type_of_transaction'] == 'message' else 1
 
@@ -386,8 +328,6 @@ class Node:
         response = await self.new_block(block.to_dict())
 
     
-        # print("Responses from self broadcast_block:", response)
-
         return True
             
 
@@ -419,9 +359,6 @@ class Node:
             print(f"I {self.id} am the validator, and I am broadcasting block {block_to_be_broadcasted.index}")
             await self.broadcast_block(block_to_be_broadcasted)
 
-        # else:
-        #     while self.current_block.transactions:
-        #         self.pending_transactions.appendleft(self.current_block.transactions.pop())
     
 
 
@@ -435,10 +372,8 @@ class Node:
 
             if transaction_added == 2:
                 self.pending_transactions.append(transaction)
-                # await self.mint_block()
 
                 if self.current_block.validator is None:
-                    # await self.mint_block()
                     return {'status': 200, 'message': 'Block is full and going to mint'}
                 else:
                     return {'status': 200, 'message': 'Block is full and already minted'}
@@ -537,14 +472,6 @@ class Node:
 
                     self.new_block_event.set()
 
-                    # for _ in range(block_capacity-1):
-                    #     if not self.pending_transactions:
-                    #         break
-                    #     trans = self.pending_transactions.popleft()
-                    #     res = self.current_block.add_transaction(trans)
-                       
-
-                        # print(f"@@@@@@@@@RES from pushing pending transactions: {res} @@@@@@@@@ with current block validator {self.current_block.validator}")
 
 
 
