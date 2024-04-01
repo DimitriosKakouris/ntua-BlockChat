@@ -102,7 +102,8 @@ async def send_init_bcc():
     print("Node ID in send initial: ", node.id)
     if node.id == 0:
         await node.send_initial_bcc()
-        await asyncio.sleep(3)
+        if test_mode:
+            await asyncio.sleep(3)
 
         
         for ring_node in node.ring:
@@ -216,8 +217,14 @@ async def handler(websocket):
 
         elif data['action'] == 'view_last_messages':
             last_validated_block = node.chain.blocks[-1].view_block()
-            messages = [transaction['message'] for transaction in last_validated_block['transactions'] if transaction['type_of_transaction'] == 'message' and transaction['recipient_address'] == node.wallet.public_key]
-            await websocket.send(json.dumps(messages))
+            message = [
+                f"Node {node.account_space[transaction['sender_address']]['id']} says: {transaction['message']}"
+                for transaction in last_validated_block['transactions']
+                if transaction['type_of_transaction'] == 'message' and transaction['recipient_address'] == node.wallet.public_key
+            ]
+
+
+            await websocket.send(json.dumps(message))
           
 
 
