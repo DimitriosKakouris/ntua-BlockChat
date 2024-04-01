@@ -69,6 +69,10 @@ async def client():
                     continue
         
                 receiver = answers['receiver']
+                ring_len = await send_websocket_request('get_ring_length', {}, ip_address, port)
+                if int(receiver) >= ring_len['ring_len']:
+                    print("\nReceiver ID is out of range. Please enter a valid ID.")
+                    continue
                 # Send transaction request
                 transaction_data = {'receiver': receiver, 'amount': answers['amount']}
                 response = await send_websocket_request('new_transaction', transaction_data, ip_address, port)
@@ -89,6 +93,10 @@ async def client():
 
 
                 receiver = answers['receiver']
+                ring_len = await send_websocket_request('get_ring_length', {}, ip_address, port)
+                if int(receiver) >= ring_len['ring_len']:
+                    print("\nReceiver ID is out of range. Please enter a valid ID.")
+                    continue
                 # Send transaction request
                 transaction_data = {'receiver': receiver, 'message': answers['message']}
                 response = await send_websocket_request('new_message', transaction_data, ip_address, port)
