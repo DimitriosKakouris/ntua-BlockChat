@@ -1,6 +1,6 @@
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
-# from ecdsa import SigningKey, VerifyingKey, SECP256k1, BadSignatureError # FOR ETHEREUM WALLET TYPE
+from ecdsa import SigningKey, VerifyingKey, SECP256k1, BadSignatureError # FOR ETHEREUM WALLET TYPE
 from Crypto.Hash import SHA256
 import base64
 import json
@@ -24,56 +24,56 @@ class Transaction:
 
 
 
-    def sign_transaction(self, private_key_string):
-        """
-        Sign the transaction with the sender's private key.
-        """
-
-        # Convert the private key from a string to a key object
-        private_key = RSA.import_key(private_key_string)
-
-        signer = pkcs1_15.new(private_key)
-        h = SHA256.new(self.transaction_id.encode())
-        self.signature = base64.b64encode(signer.sign(h)).decode()
-
-
-
-    def verify_signature(self):
-        """
-        Verify the signature of the transaction.
-        """
-        public_key = RSA.import_key(self.sender_address)
-        verifier = pkcs1_15.new(public_key)
-        h = SHA256.new(self.transaction_id.encode())
-        try:
-            verifier.verify(h, base64.b64decode(self.signature.encode()))
-            return True
-        except (ValueError, TypeError):
-            return False
-        
-    # FOR ETHEREUM WALLET TYPE
     # def sign_transaction(self, private_key_string):
     #     """
     #     Sign the transaction with the sender's private key.
     #     """
-    #     # Convert the private key from a string to a key object
-    #     private_key = SigningKey.from_string(bytes.fromhex(private_key_string), curve=SECP256k1)
 
+    #     # Convert the private key from a string to a key object
+    #     private_key = RSA.import_key(private_key_string)
+
+    #     signer = pkcs1_15.new(private_key)
     #     h = SHA256.new(self.transaction_id.encode())
-    #     self.signature = base64.b64encode(private_key.sign(h.digest())).decode()
+    #     self.signature = base64.b64encode(signer.sign(h)).decode()
+
+
 
     # def verify_signature(self):
     #     """
     #     Verify the signature of the transaction.
     #     """
-    #     public_key = VerifyingKey.from_string(bytes.fromhex(self.sender_address), curve=SECP256k1)
-
+    #     public_key = RSA.import_key(self.sender_address)
+    #     verifier = pkcs1_15.new(public_key)
     #     h = SHA256.new(self.transaction_id.encode())
     #     try:
-    #         public_key.verify(base64.b64decode(self.signature.encode()), h.digest())
+    #         verifier.verify(h, base64.b64decode(self.signature.encode()))
     #         return True
-    #     except BadSignatureError:
+    #     except (ValueError, TypeError):
     #         return False
+        
+    # FOR ETHEREUM WALLET TYPE
+    def sign_transaction(self, private_key_string):
+        """
+        Sign the transaction with the sender's private key.
+        """
+        # Convert the private key from a string to a key object
+        private_key = SigningKey.from_string(bytes.fromhex(private_key_string), curve=SECP256k1)
+
+        h = SHA256.new(self.transaction_id.encode())
+        self.signature = base64.b64encode(private_key.sign(h.digest())).decode()
+
+    def verify_signature(self):
+        """
+        Verify the signature of the transaction.
+        """
+        public_key = VerifyingKey.from_string(bytes.fromhex(self.sender_address), curve=SECP256k1)
+
+        h = SHA256.new(self.transaction_id.encode())
+        try:
+            public_key.verify(base64.b64decode(self.signature.encode()), h.digest())
+            return True
+        except BadSignatureError:
+            return False
 
 
 
