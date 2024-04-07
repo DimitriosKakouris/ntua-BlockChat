@@ -8,7 +8,7 @@
 
 #### Build and Run Your Docker Containers:
 
-1. In the [docker-compose.yml](https://github.com/tomkosm/ntua-blockchain/blob/truewebsocket/docker-compose.yml) file, comment out the nodes you don't need according to the number of clients you want to test.
+1. In the [docker-compose.yml](https://github.com/tomkosm/ntua-blockchain/blob/docker/docker-compose.yml) file, comment out the nodes you don't need according to the number of clients you want to test.
 
 2. From home directory (where docker-compose.yml and Dockerfile reside) run:
 
