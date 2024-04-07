@@ -82,7 +82,6 @@ async def send_websocket_request_update(action, data, ip, port):
 
 
 async def send_websocket_request_unique(action, data, ip, port):
-    # Define the WebSocket URL
     ws_url = f"ws://{ip}:{port}"
 
     # Connect to the WebSocket server and send the request
@@ -96,9 +95,8 @@ async def send_websocket_request_unique(action, data, ip, port):
         # Send the request
         await websocket.send(json.dumps(request))
 
-        # Wait for a response from the server
+    
         response = await websocket.recv()
 
-    # Return the response
     return json.loads(response)
 

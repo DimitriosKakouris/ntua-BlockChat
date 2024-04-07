@@ -393,7 +393,7 @@ async def handler(websocket):
             validator_ids = {}
             for ring_node in node.ring:
                 validator_ids[ring_node['public_key']] = ring_node['id']
-            validators = [validator_ids[str(block.validator)] if block.index > 1 else '0' for block in node.chain.blocks]
+            validators = [validator_ids[str(block.validator)] if block.index > 1 else -1 for block in node.chain.blocks]
             await websocket.send(json.dumps({'blocks':timestamps, 'validators':validators}))
 
 
