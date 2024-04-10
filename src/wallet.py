@@ -5,7 +5,7 @@ class Wallet:
         key = RSA.generate(2048)
         self.private_key = key.export_key().decode()
         self.public_key = key.publickey().export_key().decode()
-        self.transactions = []
+        # self.transactions = []
         self.nonce = 0
         self.balance = 0
         
