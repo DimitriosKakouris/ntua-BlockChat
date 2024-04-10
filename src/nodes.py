@@ -101,11 +101,12 @@ class Node:
     def validate_chain(self, blocks):
         """Validates all the blocks of a chain"""
 
-        if (blocks[0].previous_hash != 1) or (blocks[0].hash != blocks[0].hash_block()):
-            return False
+       
+        if len(blocks) == 1:
+            return True
 
         for i in range(1, len(blocks)):
-            if not (blocks[i].hash == blocks[i].hash_block()) or not (blocks[i].previous_hash == blocks[i - 1].hash):
+            if not self.validate_block(blocks[i]):
                 return False
         return True
     

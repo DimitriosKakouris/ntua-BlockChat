@@ -295,6 +295,9 @@ async def handler(websocket):
             # Deserialize the chain
             chain = node.chain.from_dict(serialized_chain)
             node.chain = chain
+            if not node.validate_chain(node.chain.blocks):
+                print("Chain is invalid")
+
             await websocket.send(json.dumps({'message': "Chain updated"}))
 
 
