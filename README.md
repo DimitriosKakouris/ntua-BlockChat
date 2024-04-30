@@ -1,33 +1,49 @@
-# ntua-blockchain 2023-24
 
-<!-- <p align="center">
-  <img src="./images/logo.png" max-width="50%" />
-</p> -->
+# BlockChat - NTUA Blockchain Project 2023-24
 
-#### BlockChat
+![BlockChat Logo](./images/logo.png)
 
+**BlockChat** is a university project developed at the National Technical University of Athens aimed at creating a simplified blockchain platform. It allows users to engage in secure and reliable cryptocurrency transactions and message exchanges using a dummy Ethereum-like token called BlockChat Coin (BCC).
 
-#### Run in VMs:
+## Project Overview
 
-1. Change your BOOTSTRAP_IP and BOOTSTRAP_PORT in the [./src/.env file](https://github.com/tomkosm/ntua-blockchain/blob/main/src/.env), and the prefix of the private IPs of the nodes in the network in this [line](https://github.com/tomkosm/ntua-blockchain/blob/main/src/wserve.py#L23) of the ./src/wserve.py file.
+BlockChat is dummy-cryptocurrency focusing on transaction handling and block validation using a Proof-of-Stake consensus algorithm. Users can perform secure transactions and message exchanges within a decentralized and distributed environment without the need for a central authority.
 
-2. For each node, open a terminal, and change to the home directory.
+## Features
 
-3. To run the client, from each terminal run:
+- **BlockChat Wallet**: Each user has a wallet containing BCCs necessary for making transactions and sending messages.
+- **Transactions**: Users can send BCCs or messages to other wallets. Transactions incur a fee, calculated as a percentage of the transaction amount for currency transfers or based on message length.
+- **Consensus Mechanism**: Utilizes a Proof-of-Stake algorithm to validate transactions and form new blocks.
 
-```
-bash entrypoint.sh TOTAL_NODES BLOCK_CAPACITY
-```
+## Getting Started
 
-Substitute TOTAL_NODES with the number of the clients in which you want to run the application, and BLOCK_CAPACITY with the capacity of the blocks.
+### Prerequisites
+`pip install requirements.txt`
 
-2. To run the tests (files available for either 5 or 10 clients), run:
+### Installation and Setup
 
-```
-bash test_entrypoint.sh TOTAL_NODES BLOCK_CAPACITY [COMPUTE_JUSTICE]
-```
+1. **Configure Network Settings**:
+   - Edit `./src/.env` to set the `BOOTSTRAP_IP` and `BOOTSTRAP_PORT`.
+   - Adjust the prefix for private IPs in the network in [`wserve.py line 23`](https://github.com/ntua-el19019/ntua-blockchain/blob/main/src/wserve.py#L23).
 
-The 'COMPUTE_JUSTICE' parameter is boolean. When set to 'False', each node in the tests starts with staking of 10 BCCs. When set to 'True', the bootstrap node will stake 100 BCCs, and all the others 10 BCCs. Defining this parameter is optional and it defaults to 'False'.
+2. **Starting the Application**:
+   - Open a terminal for each node and navigate to the project directory.
+   - Run the following command to start the BlockChat client:
+     ```
+     bash entrypoint.sh TOTAL_NODES BLOCK_CAPACITY
+     ```
+   - Replace `TOTAL_NODES` with the number of client nodes, and `BLOCK_CAPACITY` with the desired transactions per block capacity.
 
+3. **Run Tests**:
+   - Execute the test script to simulate network operations:
+     ```
+     bash test_entrypoint.sh TOTAL_NODES BLOCK_CAPACITY [COMPUTE_JUSTICE]
+     ```
+   - The `COMPUTE_JUSTICE` parameter (optional) influences initial staking amounts, with a default setting of `False`.
 
-##### To run the code in Docker containers, use the docker branch.
+### Docker Support
+- For containerized setup, please refer to the Docker branch and follow the provided instructions.
+
+## License
+
+BlockChat is released under the MIT License. For more details, see the LICENSE file in this repository.
