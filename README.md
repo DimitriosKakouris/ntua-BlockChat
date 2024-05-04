@@ -1,7 +1,9 @@
 
 # BlockChat - NTUA Blockchain Project 2023-24
 
-![BlockChat Logo](./images/blockchatlogo.png)
+<p align="center">
+  <img src="./images/blockchatlogo.png" width="40%">
+</p>
 
 **BlockChat** is a university project developed at the National Technical University of Athens aimed at creating a simplified blockchain platform. It allows users to engage in secure and reliable cryptocurrency transactions and message exchanges using a dummy Ethereum-like token called BlockChat Coin (BCC).
 
