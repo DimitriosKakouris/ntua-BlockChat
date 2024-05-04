@@ -41,6 +41,12 @@ BlockChat is dummy-cryptocurrency focusing on transaction handling and block val
      ```
    - The `COMPUTE_JUSTICE` parameter (optional) influences initial staking amounts, with a default setting of `False`.
 
+
+
+### Example of Usage
+![Docker (Local) CLI Demo)](./images/ntua-blockchain_cut.gif)
+
+
 ### Docker Support
 - For containerized setup, please refer to the Docker branch and follow the provided instructions.
 
